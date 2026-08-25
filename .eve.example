@@ -1,0 +1,37 @@
+# ============================================================================
+# REVENUEAGENTROUTE – UMWELTVARIABLEN (BEISPIEL)
+# ============================================================================
+# Kopiere diese Datei zu .env und fülle die Werte aus!
+# Die echten API-Keys kommen NIE auf GitHub!
+
+# ---------- SICHERHEIT ----------
+SECRET_KEY=dein_super_geheimer_schluessel_mit_64_zeichen
+
+# ---------- KI-ANBIETER ----------
+OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+# ---------- ZAHLUNGEN (STRIPE) ----------
+STRIPE_SECRET_KEY=sk_test_xxxxxxxxxxxxxxxxxxxxxxxx
+STRIPE_WEBHOOK_SECRET=whsec_xxxxxxxxxxxxxxxxxxxxxxxx
+
+# ---------- BANKVERBINDUNG (SEPA) ----------
+SEPA_IBAN=DE89370400440532013000
+SEPA_BIC=COBADEFFXXX
+
+# ---------- E-MAIL (SMTP) ----------
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=deine@email.com
+SMTP_PASSWORD=dein_app_passwort
+
+# ---------- YOUTUBE (OPTIONAL) ----------
+YOUTUBE_API_KEY=AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXX
+YOUTUBE_CHANNEL_ID=UCXXXXXXXXXXXXXXXXXXXXXXXXXX
+YOUTUBE_OAUTH_TOKEN=ya29.XXXXXXXXXXXXXXXXXXXXXXXXXX
+
+# ---------- BETRIEBSMODI ----------
+SWARM_MODE=false
+MAX_SWARM_WORKERS=1
+
+# ---------- UMWELT ----------
+ENVIRONMENT=production
