@@ -1362,6 +1362,9 @@ app.include_router(router)
 # ============================================================================
 # HEALTHCHECK (Muss für Railway ganz unten stehen)
 # ============================================================================
+@app.get("/")
+def read_root():
+    return {"status": "online", "system": "RevenueAgentRoute"}
 @app.get("/health")
 async def health_check():
     time_info = GlobalTimezoneEngine.get_active_hubs()
