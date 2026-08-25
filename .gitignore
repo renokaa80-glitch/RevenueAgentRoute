@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+*.whl
+
+# Umgebungsvariablen (WICHTIG!)
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# Temporäre Dateien
+temp_*
+*.tmp
+*.mp3
+*.mp4
+*.png
+*.jpg
+*.jpeg
+
+# Railway
+.railway/
+
+# OS
+.DS_Store
+Thumbs.db
