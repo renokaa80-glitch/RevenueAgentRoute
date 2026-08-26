@@ -134,6 +134,13 @@ class ExcelImportEngine:
             raise HTTPException(status_code=400, detail="Nur Excel-Dateien (.xlsx, .xls) erlaubt.")
 
         try:
+        except Exception as e:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Fehler beim Verarbeiten der Excel-Datei: {str(e)}",
+            )
+
+
             contents = await file.read()
             df = pd.read_excel(io.BytesIO(contents), engine='openpyxl')
             df.columns = [col.strip().lower().replace(' ', '_') for col in df.columns]
