@@ -34,14 +34,23 @@ from slowapi.middleware import SlowAPIMiddleware
 from slowapi.errors import RateLimitExceeded
 from prometheus_fastapi_instrumentator import Instrumentator
 
+# ============================================================================
+# EXCEL-IMPORT ABHÄNGIGKEITEN
+# ============================================================================
 import pandas as pd
 import openpyxl
 
+# ============================================================================
+# LOGGING & RATE LIMITER
+# ============================================================================
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("RevenueAgent_V19_NoYT")
 
 limiter = Limiter(key_func=get_remote_address)
 
+# ============================================================================
+# KONFIGURATION & UMGEBUNGSVARIABLEN
+# ============================================================================
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -60,8 +69,10 @@ SMTP_PASSWORT = os.getenv("SMTP_PASSWORD", "")
 
 stripe.api_key = STRIPE_GEHEIMER_SCHLUESSEL
 
+# Globaler HTTP-Client Pool
 global_http_client: Optional[httpx.AsyncClient] = None
 
+# Caches & Speicher
 semantic_response_cache: Dict[str, dict] = {}
 reseller_speicher: Dict[str, dict] = {}
 kunden_speicher: Dict[str, dict] = {}
@@ -83,12 +94,15 @@ leads: List[Dict] = []
 
 current_version: str = "19.1.0"
 
+# ============================================================================
+# AUTHENTIFIZIERUNG
+# ============================================================================
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/revenue/token")
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 fake_users_db = {
-    "admin": {"username": "admin", "password": pwd_context.hash("securepassword"), "role": "admin"},
-    "reseller": {"username": "reseller", "password": pwd_context.hash("resellerpass"), "role": "reseller"},
+    "admin": {"username": "admin", "password": "securepassword", "role": "admin"},
+    "reseller": {"username": "reseller", "password": "resellerpass", "role": "reseller"},
 }
 
 def create_access_token(data: dict) -> str:
@@ -103,10 +117,13 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
     except:
         raise HTTPException(status_code=401, detail="Ungültiger Token")
 
+# ============================================================================
+# SELF-EVOLUTION ENGINE
+# ============================================================================
 class SelfEvolutionEngine:
     @classmethod
     async def analyze_and_improve(cls) -> Dict:
-        prompt = "Analysiere den RevenueAgentRoute-Code. Finde 3 Verbesserungen: 1. Performance-Optimierung 2. Neue Feature-Idee 3. Sicherheitsverbesserung"
+        prompt = "Analysiere den RevenueAgentRoute-Code. Finde 3 Verbesserungen."
         verbesserung = await SmartAIRouter.call_llm_efficient(prompt, "self_evolution")
         evolution_history.append({
             "zeit": datetime.utcnow().isoformat(),
@@ -123,21 +140,22 @@ class SelfEvolutionEngine:
         current_version = f"{version_parts[0]}.{new_minor}.0"
         return {"status": "deployed", "new_version": current_version}
 
+# ============================================================================
+# AUTONOME KOSTENOPTIMIERUNG
+# ============================================================================
 class AutonomeKostenoptimierung:
     current_monthly_costs: float = 500.0
     
     @classmethod
     async def optimize_costs(cls) -> Dict:
-        alternatives = {
-            "openai": ["anthropic", "cohere", "gemini"],
-            "hosting": ["aws", "google", "azure", "hetzner"],
-            "proxies": ["smartproxy", "oxylabs", "brightdata"]
-        }
-        prompt = "Analysiere die Kosten: " + str(cls.current_monthly_costs) + " Euro pro Monat. Finde Einsparpotenziale."
+        prompt = "Analysiere die Kosten und finde Einsparpotenziale."
         optimierung = await SmartAIRouter.call_llm_efficient(prompt, "cost_optimization")
         cost_history.append({"zeit": datetime.utcnow().isoformat(), "optimierung": optimierung})
         return {"status": "optimiert", "empfehlung": optimierung}
 
+# ============================================================================
+# MARKET INTELLIGENCE
+# ============================================================================
 class MarketIntelligence:
     @classmethod
     async def scan_markets(cls) -> Dict:
@@ -154,6 +172,9 @@ class MarketIntelligence:
         neue_sparte = "new_" + markt.replace(" ", "_").lower()
         return {"status": "agent_erstellt", "sparte": neue_sparte}
 
+# ============================================================================
+# SELF-REPLICATION
+# ============================================================================
 class SelfReplication:
     @classmethod
     async def create_replica(cls, niche: str, config: Dict) -> Dict:
@@ -171,6 +192,9 @@ class SelfReplication:
     async def deploy_replica(cls, replica_id: str) -> Dict:
         return {"status": "deployed", "replica_id": replica_id}
 
+# ============================================================================
+# CONTINUOUS LEARNING
+# ============================================================================
 class ContinuousLearning:
     @classmethod
     async def learn_from_interaction(cls, interaction: Dict) -> Dict:
@@ -186,6 +210,9 @@ class ContinuousLearning:
         practices = await SmartAIRouter.call_llm_efficient(prompt, "continuous_learning")
         return {"practices": practices}
 
+# ============================================================================
+# SMART MODEL TIERING ENGINE
+# ============================================================================
 class SmartAIRouter:
     CHEAP_MODEL = "gpt-4o-mini"
     ADVANCED_MODEL = "gpt-4o"
@@ -225,6 +252,9 @@ class SmartAIRouter:
         except Exception as e:
             return "Fehler: " + str(e)
 
+# ============================================================================
+# MULTI-AGENT ORCHESTRATOR
+# ============================================================================
 class LeadGenAgent:
     async def analysieren(self, aufgabe: str) -> str:
         return await SmartAIRouter.call_llm_efficient("Analysiere Zielgruppe fuer: " + aufgabe, "cold_outreach_leadgen")
@@ -251,6 +281,9 @@ class MultiAgentOrchestrator:
 
 orchestrator_engine = MultiAgentOrchestrator()
 
+# ============================================================================
+# AUTONOMOUS ACQUISITION ENGINE
+# ============================================================================
 class AutonomousAcquisitionEngine:
     @staticmethod
     async def find_acquisition_targets(branche: str) -> List[Dict]:
@@ -261,14 +294,12 @@ class AutonomousAcquisitionEngine:
     @staticmethod
     async def evaluate_company(firma: Dict) -> Dict:
         name = firma.get("name", "Unbekannt")
-        umsatz = firma.get("umsatz", 0)
-        prompt = "Bewerte Firma " + name + " mit Umsatz " + str(umsatz)
+        prompt = "Bewerte Firma " + name + " fuer eine Uebernahme."
         bewertung = await SmartAIRouter.call_llm_efficient(prompt, "acquisition_evaluation")
         return {"status": "bewertet", "empfehlung": bewertung}
     
     @staticmethod
     async def suggest_acquisition() -> Dict:
-        markt = await MarketIntelligence.scan_markets()
         firmen = await AutonomousAcquisitionEngine.find_acquisition_targets("Robotik")
         empfehlung = await AutonomousAcquisitionEngine.evaluate_company(firmen[0] if firmen else {})
         return {
@@ -278,6 +309,9 @@ class AutonomousAcquisitionEngine:
             "entscheidung": "Bitte bestaetigen Sie den Kauf."
         }
 
+# ============================================================================
+# ENTERPRISE SECURITY SHIELD
+# ============================================================================
 class EnterpriseSecurityShield:
     @staticmethod
     async def audit_log(aktion: str, benutzer: str, details: Dict):
@@ -304,6 +338,9 @@ class EnterpriseSecurityShield:
             return True
         return False
 
+# ============================================================================
+# GLOBAL COMPLIANCE ENGINE
+# ============================================================================
 class GlobalComplianceEngine:
     @staticmethod
     async def check_compliance(daten: Dict, region: str) -> Dict:
@@ -314,6 +351,9 @@ class GlobalComplianceEngine:
         }
         return compliance_checks.get(region, {"status": "unknown", "regeln": ["standard"], "risiko": "hoch"})
 
+# ============================================================================
+# BUSINESS INTELLIGENCE ENGINE
+# ============================================================================
 class BusinessIntelligenceEngine:
     @staticmethod
     async def generate_report(zeitraum: str) -> Dict:
@@ -326,6 +366,9 @@ class BusinessIntelligenceEngine:
             "trends": ["SaaS waechst", "KI-Nachfrage steigt"]
         }
 
+# ============================================================================
+# MULTI-TENANT ENGINE
+# ============================================================================
 class MultiTenantEngine:
     @classmethod
     def create_tenant(cls, name: str, config: Dict) -> str:
@@ -333,6 +376,9 @@ class MultiTenantEngine:
         tenants[tenant_id] = {"name": name, "config": config, "created": datetime.utcnow().isoformat()}
         return tenant_id
 
+# ============================================================================
+# TREASURY & BOOTSTRAPPING ENGINE
+# ============================================================================
 class SystemLevel(str, Enum):
     LEVEL_1 = "Level 1: 0 Euro - Zero Capital Bootstrap"
     LEVEL_2 = "Level 2: 1.000 Euro+ - Wallet & Sourcing aktiv"
@@ -358,6 +404,9 @@ class TreasuryWalletEngine:
             cls.current_level = SystemLevel.LEVEL_2
         logger.info("Level: " + cls.current_level.value)
 
+# ============================================================================
+# 70+ AUTONOME B2B-SPARTEN
+# ============================================================================
 class AgentTyp(str, Enum):
     COLD_OUTREACH = "cold_outreach_leadgen"
     SEO_AUDIT = "seo_audit_repair"
@@ -430,6 +479,9 @@ class AgentTyp(str, Enum):
     CART_RECOVERY_WINBACK = "cart_recovery_winback"
     GEO_KNOWLEDGE_GRAPH_ENTRY = "geo_knowledge_graph_entry"
 
+# ============================================================================
+# GLOBAL COMMAND CENTER
+# ============================================================================
 class GlobalTimezoneEngine:
     @staticmethod
     def get_active_hubs() -> Dict[str, Any]:
@@ -454,6 +506,9 @@ class GlobalTimezoneEngine:
             }
         }
 
+# ============================================================================
+# EXCEL-IMPORT ENGINE
+# ============================================================================
 class ExcelImportEngine:
     @staticmethod
     async def process_excel(file: UploadFile) -> Dict:
@@ -494,6 +549,9 @@ class ExcelImportEngine:
             logger.error("Excel-Import Fehler: " + str(e))
             raise HTTPException(status_code=500, detail="Fehler beim Verarbeiten der Excel-Datei: " + str(e))
 
+# ============================================================================
+# LEAD GENERATION BOTS
+# ============================================================================
 class LeadGenerationBots:
     @classmethod
     async def create_campaign(cls, name: str, target_industry: str, budget: float) -> Dict:
@@ -554,6 +612,9 @@ class LeadGenerationBots:
     async def get_campaigns(cls) -> List[Dict]:
         return lead_campaigns
 
+# ============================================================================
+# DSGVO COMPLIANCE ENGINE
+# ============================================================================
 class DSGVOComplianceEngine:
     @staticmethod
     async def anonymize_user_data(user_id: str) -> Dict:
@@ -584,11 +645,15 @@ class DSGVOComplianceEngine:
             "exported_at": datetime.utcnow().isoformat()
         }
 
+# ============================================================================
+# API ROUTER & ENDPOINTS
+# ============================================================================
 router = APIRouter(prefix="/api/revenue", tags=["RevenueAgent_V19_NoYT"])
 
 rechnungs_speicher: Dict[str, dict] = {}
 task_speicher: Dict[str, dict] = {}
 
+# Anfrage-Modelle
 class RechnungErstellen(BaseModel):
     kunden_email: str = Field(..., pattern=r"^[^@]+@[^@]+\.[^@]+$")
     betrag: float = Field(..., gt=0, le=100000.0)
@@ -617,15 +682,21 @@ class LeadCampaignRequest(BaseModel):
     target_industry: str
     budget: float = 100.0
 
+# ============================================================================
+# API ENDPOINTS
+# ============================================================================
+
+# --- AUTH ---
 @router.post("/token")
 @limiter.limit("5/minute")
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     user = fake_users_db.get(form_data.username)
-    if not user or not pwd_context.verify(form_data.password, user["password"]):
+    if not user or user["password"] != form_data.password:
         raise HTTPException(status_code=400, detail="Falscher Benutzername oder Passwort")
     token = create_access_token({"sub": user["username"], "role": user["role"]})
     return {"access_token": token, "token_type": "bearer"}
 
+# --- HEALTH ---
 @router.get("/health")
 async def health_check():
     time_info = GlobalTimezoneEngine.get_active_hubs()
@@ -639,6 +710,7 @@ async def health_check():
         "primary_active_region": time_info["primary_active_region"]
     }
 
+# --- WALLET ---
 @router.get("/wallet/status")
 async def get_wallet_status():
     return {
@@ -655,6 +727,7 @@ async def deposit_to_wallet(req: WalletDepositRequest):
         "new_wallet_balance_usd": TreasuryWalletEngine.wallet_balance_usd
     }
 
+# --- RECHNUNGEN ---
 @router.post("/rechnung/erstellen")
 async def rechnung_erstellen(anfrage: RechnungErstellen):
     rechnungs_id = "inv_" + uuid.uuid4().hex[:8]
@@ -684,93 +757,4 @@ async def process_incoming_payment(payload: PaymentWebhookPayload):
         "current_level": TreasuryWalletEngine.current_level.value
     }
 
-@router.post("/excel/import")
-@limiter.limit("5/minute")
-async def import_excel(file: UploadFile = File(...)):
-    result = await ExcelImportEngine.process_excel(file)
-    return result
-
-@router.post("/leads/campaign")
-async def create_lead_campaign(req: LeadCampaignRequest):
-    result = await LeadGenerationBots.create_campaign(req.name, req.target_industry, req.budget)
-    return {"status": "campaign_created", "result": result}
-
-@router.get("/leads/all")
-async def get_all_leads(status: Optional[str] = None):
-    leads_result = await LeadGenerationBots.get_leads(status)
-    return {"leads": leads_result, "count": len(leads_result)}
-
-@router.post("/task/starten")
-async def task_starten(req: TaskAnfrage):
-    ergebnis = await SmartAIRouter.call_llm_efficient(
-        "Fuehre Sparte " + req.sparte.value + " fuer " + req.ziel_branche + " aus.",
-        req.sparte.value
-    )
-    task_id = "task_" + uuid.uuid4().hex[:8]
-    task_speicher[task_id] = {
-        "id": task_id,
-        "sparte": req.sparte.value,
-        "ziel_branche": req.ziel_branche,
-        "ergebnis": ergebnis,
-        "status": "completed"
-    }
-    return {"status": "completed", "task_id": task_id, "ergebnis": ergebnis}
-
-@router.get("/sparten/alle")
-async def alle_sparten_auflisten():
-    return {"gesamt_sparten": len(AgentTyp), "sparten_liste": [s.value for s in AgentTyp]}
-
-@router.post("/orchestrate/team-task")
-async def orchestrate_team_task(req: OrchestrateAnfrage):
-    ergebnis = await orchestrator_engine.orchestrate(req.aufgabe)
-    return ergebnis
-
-@router.post("/acquisition/suggest")
-async def acquisition_suggest(req: AcquisitionSuggestionRequest):
-    result = await AutonomousAcquisitionEngine.suggest_acquisition()
-    return {"status": "vorschlag_bereit", "result": result}
-
-@router.post("/evolution/analyze")
-async def evolution_analysieren():
-    return await SelfEvolutionEngine.analyze_and_improve()
-
-@router.post("/evolution/deploy")
-async def evolution_deployen(code: str):
-    return await SelfEvolutionEngine.deploy_upgrade(code)
-
-@router.get("/evolution/history")
-async def evolution_history_abrufen():
-    return {"evolution": evolution_history[-20:]}
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    global global_http_client
-    global_http_client = httpx.AsyncClient(timeout=10.0)
-    logger.info("RevenueAgentRoute V19.1.0 gestartet")
-    yield
-    await global_http_client.aclose()
-    gc.collect()
-
-app = FastAPI(
-    title="RevenueAgentRoute V19.1.0",
-    version="19.1.0",
-    lifespan=lifespan
-)
-
-app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, lambda req, exc: JSONResponse(status_code=429, content={"detail": "Rate limit exceeded"}))
-app.add_middleware(SlowAPIMiddleware)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-app.include_router(router)
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+# --- EXCEL
