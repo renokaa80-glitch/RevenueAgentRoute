@@ -683,7 +683,7 @@ class LeadCampaignRequest(BaseModel):
     budget: float = 100.0
 
 # ============================================================================
-# API ENDPOINTS (MIT REQUEST FÜR RATE LIMITING)
+# API ENDPOINTS (ALLE MIT REQUEST FÜR RATE LIMITING)
 # ============================================================================
 
 @router.post("/token")
@@ -755,4 +755,94 @@ async def process_incoming_payment(payload: PaymentWebhookPayload):
 
 @router.post("/excel/import")
 @limiter.limit("5/minute")
-async
+async def import_excel(request: Request, file: UploadFile = File(...)):
+    result = await ExcelImportEngine.process_excel(file)
+    return result
+
+@router.post("/leads/campaign")
+async def create_lead_campaign(req: LeadCampaignRequest):
+    result = await LeadGenerationBots.create_campaign(req.name, req.target_industry, req.budget)
+    return {"status": "campaign_created", "result": result}
+
+@router.get("/leads/all")
+async def get_all_leads(status: Optional[str] = None):
+    leads_result = await LeadGenerationBots.get_leads(status)
+    return {"leads": leads_result, "count": len(leads_result)}
+
+@router.post("/task/starten")
+async def task_starten(req: TaskAnfrage):
+    ergebnis = await SmartAIRouter.call_llm_efficient(
+        "Fuehre Sparte " + req.sparte.value + " fuer " + req.ziel_branche + " aus.",
+        req.sparte.value
+    )
+    task_id = "task_" + uuid.uuid4().hex[:8]
+    task_speicher[task_id] = {
+        "id": task_id,
+        "sparte": req.sparte.value,
+        "ziel_branche": req.ziel_branche,
+        "ergebnis": ergebnis,
+        "status": "completed"
+    }
+    return {"status": "completed", "task_id": task_id, "ergebnis": ergebnis}
+
+@router.get("/sparten/alle")
+async def alle_sparten_auflisten():
+    return {"gesamt_sparten": len(AgentTyp), "sparten_liste": [s.value for s in AgentTyp]}
+
+@router.post("/orchestrate/team-task")
+async def orchestrate_team_task(req: OrchestrateAnfrage):
+    ergebnis = await orchestrator_engine.orchestrate(req.aufgabe)
+    return ergebnis
+
+@router.post("/acquisition/suggest")
+async def acquisition_suggest(req: AcquisitionSuggestionRequest):
+    result = await AutonomousAcquisitionEngine.suggest_acquisition()
+    return {"status": "vorschlag_bereit", "result": result}
+
+@router.post("/evolution/analyze")
+async def evolution_analysieren():
+    return await SelfEvolutionEngine.analyze_and_improve()
+
+@router.post("/evolution/deploy")
+async def evolution_deployen(code: str):
+    return await SelfEvolutionEngine.deploy_upgrade(code)
+
+@router.get("/evolution/history")
+async def evolution_history_abrufen():
+    return {"evolution": evolution_history[-20:]}
+
+# ============================================================================
+# LIFESPAN & APP
+# ============================================================================
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global global_http_client
+    global_http_client = httpx.AsyncClient(timeout=10.0)
+    logger.info("🚀 RevenueAgentRoute V19.1.0 gestartet")
+    yield
+    await global_http_client.aclose()
+    gc.collect()
+
+app = FastAPI(
+    title="RevenueAgentRoute V19.1.0",
+    version="19.1.0",
+    lifespan=lifespan
+)
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, lambda req, exc: JSONResponse(status_code=429, content={"detail": "Rate limit exceeded"}))
+app.add_middleware(SlowAPIMiddleware)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(router)
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
