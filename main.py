@@ -1,8 +1,6 @@
 # ============================================================================
 # REVENUEAGENTROUTE – V19.1.0 (OHNE YOUTUBE – FÜR RAILWAY OPTIMIERT)
 # ============================================================================
-# KEINE YOUTUBE-FUNKTIONEN – NUR KERN-FEATURES, EXCEL-IMPORT, LEAD-BOTS
-# ============================================================================
 
 import asyncio
 import gc
@@ -770,4 +768,13 @@ async def health_check():
         "version": current_version,
         "sparten_anzahl": len(AgentTyp),
         "total_bank_earnings_usd": TreasuryWalletEngine.total_bank_earnings_usd,
-        "wallet_balance_usd
+        "wallet_balance_usd": TreasuryWalletEngine.wallet_balance_usd,
+        "level": TreasuryWalletEngine.current_level.value,
+        "primary_active_region": time_info["primary_active_region"]
+    }
+
+# --- WALLET ---
+@router.get("/wallet/status")
+async def get_wallet_status():
+    return {
+        "total_bank_
