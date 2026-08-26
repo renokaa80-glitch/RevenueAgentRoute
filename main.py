@@ -127,6 +127,12 @@ class SmartAIRouter:
 # ============================================================================
 # EXCEL-IMPORT ENGINE
 # ============================================================================
+# ============================================================================
+# EXCEL-IMPORT ENGINE
+# ============================================================================
+# ============================================================================
+# EXCEL-IMPORT ENGINE
+# ============================================================================
 class ExcelImportEngine:
     @staticmethod
     async def process_excel(file: UploadFile) -> Dict:
@@ -134,17 +140,39 @@ class ExcelImportEngine:
             raise HTTPException(status_code=400, detail="Nur Excel-Dateien (.xlsx, .xls) erlaubt.")
 
         try:
-        except Exception as e:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Fehler beim Verarbeiten der Excel-Datei: {str(e)}",
-            )
-
-
             contents = await file.read()
             df = pd.read_excel(io.BytesIO(contents), engine='openpyxl')
+            
             df.columns = [col.strip().lower().replace(' ', '_') for col in df.columns]
             records = df.to_dict(orient='records')
+            
+            import_record = {
+                "filename": file.filename,
+                "timestamp": datetime.utcnow().isoformat(),
+                "rows": len(records),
+                "columns": list(df.columns),
+                "data": records
+            }
+            excel_imports.append(import_record)
+            
+            # Automatische Lead-Erkennung
+            leads_created = 0
+            if 'email' in df.columns and 'firma' in df.columns:
+                leads_created = len(df)
+            
+            gc.collect()
+            
+            return {
+                "status": "success",
+                "imported_rows": len(records),
+                "leads_created": leads_created,
+                "columns": list(df.columns),
+                "message": f"Excel-Datei '{file.filename}' erfolgreich importiert."
+            }
+            
+        except Exception as e:
+            logger.error(f"Excel-Import Fehler: {e}")
+            raise HTTPException(status_code=500, detail=f"Fehler beim Verarbeiten der Excel-Datei: {str(e)}")
             
             excel_imports.append({
                 "filename": file.filename,
