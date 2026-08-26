@@ -1,5 +1,5 @@
 # ============================================================================
-# REVENUEAGENTROUTE – V19.1.0 (OHNE YOUTUBE – FÜR RAILWAY OPTIMIERT)
+# REVENUEAGENTROUTE – V19.1.0 (KOMPLETT KORRIGIERT)
 # ============================================================================
 
 import asyncio
@@ -34,23 +34,14 @@ from slowapi.middleware import SlowAPIMiddleware
 from slowapi.errors import RateLimitExceeded
 from prometheus_fastapi_instrumentator import Instrumentator
 
-# ============================================================================
-# EXCEL-IMPORT ABHÄNGIGKEITEN
-# ============================================================================
 import pandas as pd
 import openpyxl
 
-# ============================================================================
-# LOGGING & RATE LIMITER
-# ============================================================================
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("RevenueAgent_V19_NoYT")
 
 limiter = Limiter(key_func=get_remote_address)
 
-# ============================================================================
-# KONFIGURATION & UMGEBUNGSVARIABLEN
-# ============================================================================
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -523,6 +514,10 @@ class LeadCampaignRequest(BaseModel):
     name: str
     target_industry: str
     budget: float = 100.0
+
+# ============================================================================
+# ENDPUNKTE (ALLE KORRIGIERT!)
+# ============================================================================
 
 @router.post("/token")
 @limiter.limit("5/minute")
