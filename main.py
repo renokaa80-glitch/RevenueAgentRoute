@@ -69,10 +69,8 @@ SMTP_PASSWORT = os.getenv("SMTP_PASSWORD", "")
 
 stripe.api_key = STRIPE_GEHEIMER_SCHLUESSEL
 
-# Globaler HTTP-Client Pool
 global_http_client: Optional[httpx.AsyncClient] = None
 
-# Caches & Speicher
 semantic_response_cache: Dict[str, dict] = {}
 reseller_speicher: Dict[str, dict] = {}
 kunden_speicher: Dict[str, dict] = {}
@@ -94,9 +92,6 @@ leads: List[Dict] = []
 
 current_version: str = "19.1.0"
 
-# ============================================================================
-# AUTHENTIFIZIERUNG
-# ============================================================================
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/revenue/token")
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -117,19 +112,12 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
     except:
         raise HTTPException(status_code=401, detail="Ungültiger Token")
 
-# ============================================================================
-# SELF-EVOLUTION ENGINE
-# ============================================================================
 class SelfEvolutionEngine:
     @classmethod
     async def analyze_and_improve(cls) -> Dict:
-        prompt = "Analysiere den RevenueAgentRoute-Code. Finde 3 Verbesserungen."
+        prompt = "Analysiere den Code. Finde 3 Verbesserungen."
         verbesserung = await SmartAIRouter.call_llm_efficient(prompt, "self_evolution")
-        evolution_history.append({
-            "zeit": datetime.utcnow().isoformat(),
-            "verbesserung": verbesserung,
-            "version": current_version
-        })
+        evolution_history.append({"zeit": datetime.utcnow().isoformat(), "verbesserung": verbesserung, "version": current_version})
         return {"status": "analysiert", "verbesserung": verbesserung}
     
     @classmethod
@@ -140,9 +128,6 @@ class SelfEvolutionEngine:
         current_version = f"{version_parts[0]}.{new_minor}.0"
         return {"status": "deployed", "new_version": current_version}
 
-# ============================================================================
-# AUTONOME KOSTENOPTIMIERUNG
-# ============================================================================
 class AutonomeKostenoptimierung:
     current_monthly_costs: float = 500.0
     
@@ -153,18 +138,12 @@ class AutonomeKostenoptimierung:
         cost_history.append({"zeit": datetime.utcnow().isoformat(), "optimierung": optimierung})
         return {"status": "optimiert", "empfehlung": optimierung}
 
-# ============================================================================
-# MARKET INTELLIGENCE
-# ============================================================================
 class MarketIntelligence:
     @classmethod
     async def scan_markets(cls) -> Dict:
         prompt = "Analysiere aktuelle Trends in B2B-Märkten. Identifiziere 3 aufkommende Nischen."
         insights = await SmartAIRouter.call_llm_efficient(prompt, "market_intelligence")
-        market_insights.append({
-            "zeit": datetime.utcnow().isoformat(),
-            "insights": insights
-        })
+        market_insights.append({"zeit": datetime.utcnow().isoformat(), "insights": insights})
         return {"status": "gescannt", "insights": insights}
     
     @classmethod
@@ -172,36 +151,21 @@ class MarketIntelligence:
         neue_sparte = "new_" + markt.replace(" ", "_").lower()
         return {"status": "agent_erstellt", "sparte": neue_sparte}
 
-# ============================================================================
-# SELF-REPLICATION
-# ============================================================================
 class SelfReplication:
     @classmethod
     async def create_replica(cls, niche: str, config: Dict) -> Dict:
         replica_id = "replica_" + uuid.uuid4().hex[:8]
-        replicas.append({
-            "id": replica_id,
-            "niche": niche,
-            "config": config,
-            "created": datetime.utcnow().isoformat(),
-            "status": "active"
-        })
+        replicas.append({"id": replica_id, "niche": niche, "config": config, "created": datetime.utcnow().isoformat(), "status": "active"})
         return {"status": "replica_created", "id": replica_id}
     
     @classmethod
     async def deploy_replica(cls, replica_id: str) -> Dict:
         return {"status": "deployed", "replica_id": replica_id}
 
-# ============================================================================
-# CONTINUOUS LEARNING
-# ============================================================================
 class ContinuousLearning:
     @classmethod
     async def learn_from_interaction(cls, interaction: Dict) -> Dict:
-        learning_knowledge.append({
-            "zeit": datetime.utcnow().isoformat(),
-            "interaction": interaction
-        })
+        learning_knowledge.append({"zeit": datetime.utcnow().isoformat(), "interaction": interaction})
         return {"status": "gelernt"}
     
     @classmethod
@@ -210,9 +174,6 @@ class ContinuousLearning:
         practices = await SmartAIRouter.call_llm_efficient(prompt, "continuous_learning")
         return {"practices": practices}
 
-# ============================================================================
-# SMART MODEL TIERING ENGINE
-# ============================================================================
 class SmartAIRouter:
     CHEAP_MODEL = "gpt-4o-mini"
     ADVANCED_MODEL = "gpt-4o"
@@ -235,12 +196,7 @@ class SmartAIRouter:
             return simulated
         
         headers = {"Authorization": "Bearer " + OPENAI_API_KEY, "Content-Type": "application/json"}
-        payload = {
-            "model": model,
-            "messages": [{"role": "system", "content": "Praezise B2B-Antworten. Keine Fuellwoerter."}, {"role": "user", "content": prompt}],
-            "max_tokens": 400,
-            "temperature": 0.2
-        }
+        payload = {"model": model, "messages": [{"role": "system", "content": "Praezise B2B-Antworten. Keine Fuellwoerter."}, {"role": "user", "content": prompt}], "max_tokens": 400, "temperature": 0.2}
         
         try:
             res = await global_http_client.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
@@ -252,9 +208,6 @@ class SmartAIRouter:
         except Exception as e:
             return "Fehler: " + str(e)
 
-# ============================================================================
-# MULTI-AGENT ORCHESTRATOR
-# ============================================================================
 class LeadGenAgent:
     async def analysieren(self, aufgabe: str) -> str:
         return await SmartAIRouter.call_llm_efficient("Analysiere Zielgruppe fuer: " + aufgabe, "cold_outreach_leadgen")
@@ -281,9 +234,6 @@ class MultiAgentOrchestrator:
 
 orchestrator_engine = MultiAgentOrchestrator()
 
-# ============================================================================
-# AUTONOMOUS ACQUISITION ENGINE
-# ============================================================================
 class AutonomousAcquisitionEngine:
     @staticmethod
     async def find_acquisition_targets(branche: str) -> List[Dict]:
@@ -302,27 +252,12 @@ class AutonomousAcquisitionEngine:
     async def suggest_acquisition() -> Dict:
         firmen = await AutonomousAcquisitionEngine.find_acquisition_targets("Robotik")
         empfehlung = await AutonomousAcquisitionEngine.evaluate_company(firmen[0] if firmen else {})
-        return {
-            "status": "vorschlag_bereit",
-            "firma": firmen[0] if firmen else {},
-            "bewertung": empfehlung,
-            "entscheidung": "Bitte bestaetigen Sie den Kauf."
-        }
+        return {"status": "vorschlag_bereit", "firma": firmen[0] if firmen else {}, "bewertung": empfehlung, "entscheidung": "Bitte bestaetigen Sie den Kauf."}
 
-# ============================================================================
-# ENTERPRISE SECURITY SHIELD
-# ============================================================================
 class EnterpriseSecurityShield:
     @staticmethod
     async def audit_log(aktion: str, benutzer: str, details: Dict):
-        log = {
-            "zeit": datetime.utcnow().isoformat(),
-            "aktion": aktion,
-            "benutzer": benutzer,
-            "details": details,
-            "ip": "127.0.0.1",
-            "session_id": str(uuid.uuid4())
-        }
+        log = {"zeit": datetime.utcnow().isoformat(), "aktion": aktion, "benutzer": benutzer, "details": details, "ip": "127.0.0.1", "session_id": str(uuid.uuid4())}
         audit_logs.append(log)
         return log
     
@@ -338,37 +273,17 @@ class EnterpriseSecurityShield:
             return True
         return False
 
-# ============================================================================
-# GLOBAL COMPLIANCE ENGINE
-# ============================================================================
 class GlobalComplianceEngine:
     @staticmethod
     async def check_compliance(daten: Dict, region: str) -> Dict:
-        compliance_checks = {
-            "EU": {"status": "compliant", "regeln": ["dsgvo", "gobd"], "risiko": "niedrig"},
-            "US": {"status": "partially_compliant", "regeln": ["ccpa", "hipaa"], "risiko": "mittel"},
-            "CA": {"status": "compliant", "regeln": ["pipeda"], "risiko": "niedrig"}
-        }
+        compliance_checks = {"EU": {"status": "compliant", "regeln": ["dsgvo", "gobd"], "risiko": "niedrig"}, "US": {"status": "partially_compliant", "regeln": ["ccpa", "hipaa"], "risiko": "mittel"}, "CA": {"status": "compliant", "regeln": ["pipeda"], "risiko": "niedrig"}}
         return compliance_checks.get(region, {"status": "unknown", "regeln": ["standard"], "risiko": "hoch"})
 
-# ============================================================================
-# BUSINESS INTELLIGENCE ENGINE
-# ============================================================================
 class BusinessIntelligenceEngine:
     @staticmethod
     async def generate_report(zeitraum: str) -> Dict:
-        return {
-            "zeitraum": zeitraum,
-            "umsatz": 150000,
-            "wachstum": 35,
-            "top_kunden": ["Firma A", "Firma B"],
-            "prognose": 200000,
-            "trends": ["SaaS waechst", "KI-Nachfrage steigt"]
-        }
+        return {"zeitraum": zeitraum, "umsatz": 150000, "wachstum": 35, "top_kunden": ["Firma A", "Firma B"], "prognose": 200000, "trends": ["SaaS waechst", "KI-Nachfrage steigt"]}
 
-# ============================================================================
-# MULTI-TENANT ENGINE
-# ============================================================================
 class MultiTenantEngine:
     @classmethod
     def create_tenant(cls, name: str, config: Dict) -> str:
@@ -376,9 +291,6 @@ class MultiTenantEngine:
         tenants[tenant_id] = {"name": name, "config": config, "created": datetime.utcnow().isoformat()}
         return tenant_id
 
-# ============================================================================
-# TREASURY & BOOTSTRAPPING ENGINE
-# ============================================================================
 class SystemLevel(str, Enum):
     LEVEL_1 = "Level 1: 0 Euro - Zero Capital Bootstrap"
     LEVEL_2 = "Level 2: 1.000 Euro+ - Wallet & Sourcing aktiv"
@@ -404,9 +316,6 @@ class TreasuryWalletEngine:
             cls.current_level = SystemLevel.LEVEL_2
         logger.info("Level: " + cls.current_level.value)
 
-# ============================================================================
-# 70+ AUTONOME B2B-SPARTEN
-# ============================================================================
 class AgentTyp(str, Enum):
     COLD_OUTREACH = "cold_outreach_leadgen"
     SEO_AUDIT = "seo_audit_repair"
@@ -479,9 +388,6 @@ class AgentTyp(str, Enum):
     CART_RECOVERY_WINBACK = "cart_recovery_winback"
     GEO_KNOWLEDGE_GRAPH_ENTRY = "geo_knowledge_graph_entry"
 
-# ============================================================================
-# GLOBAL COMMAND CENTER
-# ============================================================================
 class GlobalTimezoneEngine:
     @staticmethod
     def get_active_hubs() -> Dict[str, Any]:
@@ -496,19 +402,8 @@ class GlobalTimezoneEngine:
         elif 8 <= asia_h <= 18:
             active = "APAC (Asia-Pacific)"
         
-        return {
-            "current_utc": now_utc.strftime("%Y-%m-%d %H:%M:%S UTC"),
-            "primary_active_region": active,
-            "hubs": {
-                "US": {"time": f"{us_h:02d}:00 EST", "status": "ACTIVE" if 8 <= us_h <= 18 else "STANDBY"},
-                "EU": {"time": f"{eu_h:02d}:00 CET", "status": "ACTIVE" if 8 <= eu_h <= 18 else "STANDBY"},
-                "APAC": {"time": f"{asia_h:02d}:00 SGT", "status": "ACTIVE" if 8 <= asia_h <= 18 else "STANDBY"}
-            }
-        }
+        return {"current_utc": now_utc.strftime("%Y-%m-%d %H:%M:%S UTC"), "primary_active_region": active, "hubs": {"US": {"time": f"{us_h:02d}:00 EST", "status": "ACTIVE" if 8 <= us_h <= 18 else "STANDBY"}, "EU": {"time": f"{eu_h:02d}:00 CET", "status": "ACTIVE" if 8 <= eu_h <= 18 else "STANDBY"}, "APAC": {"time": f"{asia_h:02d}:00 SGT", "status": "ACTIVE" if 8 <= asia_h <= 18 else "STANDBY"}}}
 
-# ============================================================================
-# EXCEL-IMPORT ENGINE
-# ============================================================================
 class ExcelImportEngine:
     @staticmethod
     async def process_excel(file: UploadFile) -> Dict:
@@ -522,13 +417,7 @@ class ExcelImportEngine:
             df.columns = [col.strip().lower().replace(" ", "_") for col in df.columns]
             records = df.to_dict(orient="records")
             
-            import_record = {
-                "filename": file.filename,
-                "timestamp": datetime.utcnow().isoformat(),
-                "rows": len(records),
-                "columns": list(df.columns),
-                "data": records
-            }
+            import_record = {"filename": file.filename, "timestamp": datetime.utcnow().isoformat(), "rows": len(records), "columns": list(df.columns), "data": records}
             excel_imports.append(import_record)
             
             leads_created = 0
@@ -537,33 +426,16 @@ class ExcelImportEngine:
             
             gc.collect()
             
-            return {
-                "status": "success",
-                "imported_rows": len(records),
-                "leads_created": leads_created,
-                "columns": list(df.columns),
-                "message": "Excel-Datei " + file.filename + " erfolgreich importiert."
-            }
+            return {"status": "success", "imported_rows": len(records), "leads_created": leads_created, "columns": list(df.columns), "message": "Excel-Datei " + file.filename + " erfolgreich importiert."}
             
         except Exception as e:
             logger.error("Excel-Import Fehler: " + str(e))
             raise HTTPException(status_code=500, detail="Fehler beim Verarbeiten der Excel-Datei: " + str(e))
 
-# ============================================================================
-# LEAD GENERATION BOTS
-# ============================================================================
 class LeadGenerationBots:
     @classmethod
     async def create_campaign(cls, name: str, target_industry: str, budget: float) -> Dict:
-        campaign = {
-            "id": "camp_" + uuid.uuid4().hex[:8],
-            "name": name,
-            "target_industry": target_industry,
-            "budget": budget,
-            "status": "active",
-            "leads_found": 0,
-            "created_at": datetime.utcnow().isoformat()
-        }
+        campaign = {"id": "camp_" + uuid.uuid4().hex[:8], "name": name, "target_industry": target_industry, "budget": budget, "status": "active", "leads_found": 0, "created_at": datetime.utcnow().isoformat()}
         lead_campaigns.append(campaign)
         result = await cls.run_campaign(campaign["id"])
         return campaign
@@ -580,13 +452,7 @@ class LeadGenerationBots:
         leads_created = 0
         for lead in result.split("\n")[:10]:
             if len(lead.strip()) > 5:
-                leads.append({
-                    "id": "lead_" + uuid.uuid4().hex[:8],
-                    "campaign_id": campaign_id,
-                    "data": lead,
-                    "status": "new",
-                    "created_at": datetime.utcnow().isoformat()
-                })
+                leads.append({"id": "lead_" + uuid.uuid4().hex[:8], "campaign_id": campaign_id, "data": lead, "status": "new", "created_at": datetime.utcnow().isoformat()})
                 leads_created += 1
         
         campaign["leads_found"] = leads_created
@@ -612,48 +478,24 @@ class LeadGenerationBots:
     async def get_campaigns(cls) -> List[Dict]:
         return lead_campaigns
 
-# ============================================================================
-# DSGVO COMPLIANCE ENGINE
-# ============================================================================
 class DSGVOComplianceEngine:
     @staticmethod
     async def anonymize_user_data(user_id: str) -> Dict:
-        return {
-            "status": "anonymized",
-            "user_id": user_id,
-            "anonymized_at": datetime.utcnow().isoformat()
-        }
+        return {"status": "anonymized", "user_id": user_id, "anonymized_at": datetime.utcnow().isoformat()}
     
     @staticmethod
     async def delete_user_data(user_id: str) -> Dict:
-        return {
-            "status": "deleted",
-            "user_id": user_id,
-            "deleted_at": datetime.utcnow().isoformat()
-        }
+        return {"status": "deleted", "user_id": user_id, "deleted_at": datetime.utcnow().isoformat()}
     
     @staticmethod
     async def export_user_data(user_id: str) -> Dict:
-        return {
-            "status": "exported",
-            "user_id": user_id,
-            "data": {
-                "profile": {"name": "Test User", "email": "test@example.com"},
-                "activities": ["Login", "Task gestartet"],
-                "created_at": "2026-01-01T00:00:00Z"
-            },
-            "exported_at": datetime.utcnow().isoformat()
-        }
+        return {"status": "exported", "user_id": user_id, "data": {"profile": {"name": "Test User", "email": "test@example.com"}, "activities": ["Login", "Task gestartet"], "created_at": "2026-01-01T00:00:00Z"}, "exported_at": datetime.utcnow().isoformat()}
 
-# ============================================================================
-# API ROUTER & ENDPOINTS
-# ============================================================================
 router = APIRouter(prefix="/api/revenue", tags=["RevenueAgent_V19_NoYT"])
 
 rechnungs_speicher: Dict[str, dict] = {}
 task_speicher: Dict[str, dict] = {}
 
-# Anfrage-Modelle
 class RechnungErstellen(BaseModel):
     kunden_email: str = Field(..., pattern=r"^[^@]+@[^@]+\.[^@]+$")
     betrag: float = Field(..., gt=0, le=100000.0)
@@ -682,10 +524,6 @@ class LeadCampaignRequest(BaseModel):
     target_industry: str
     budget: float = 100.0
 
-# ============================================================================
-# API ENDPOINTS (ALLE MIT REQUEST FÜR RATE LIMITING)
-# ============================================================================
-
 @router.post("/token")
 @limiter.limit("5/minute")
 async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends()):
@@ -698,46 +536,23 @@ async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends
 @router.get("/health")
 async def health_check():
     time_info = GlobalTimezoneEngine.get_active_hubs()
-    return {
-        "status": "healthy",
-        "version": current_version,
-        "sparten_anzahl": len(AgentTyp),
-        "total_bank_earnings_usd": TreasuryWalletEngine.total_bank_earnings_usd,
-        "wallet_balance_usd": TreasuryWalletEngine.wallet_balance_usd,
-        "level": TreasuryWalletEngine.current_level.value,
-        "primary_active_region": time_info["primary_active_region"]
-    }
+    return {"status": "healthy", "version": current_version, "sparten_anzahl": len(AgentTyp), "total_bank_earnings_usd": TreasuryWalletEngine.total_bank_earnings_usd, "wallet_balance_usd": TreasuryWalletEngine.wallet_balance_usd, "level": TreasuryWalletEngine.current_level.value, "primary_active_region": time_info["primary_active_region"]}
 
 @router.get("/wallet/status")
 async def get_wallet_status():
-    return {
-        "total_bank_earnings_usd": TreasuryWalletEngine.total_bank_earnings_usd,
-        "wallet_balance_usd": TreasuryWalletEngine.wallet_balance_usd,
-        "current_level": TreasuryWalletEngine.current_level.value
-    }
+    return {"total_bank_earnings_usd": TreasuryWalletEngine.total_bank_earnings_usd, "wallet_balance_usd": TreasuryWalletEngine.wallet_balance_usd, "current_level": TreasuryWalletEngine.current_level.value}
 
 @router.post("/wallet/einzahlen")
 async def deposit_to_wallet(req: WalletDepositRequest):
     TreasuryWalletEngine.wallet_balance_usd += req.amount_usd
-    return {
-        "status": "success",
-        "new_wallet_balance_usd": TreasuryWalletEngine.wallet_balance_usd
-    }
+    return {"status": "success", "new_wallet_balance_usd": TreasuryWalletEngine.wallet_balance_usd}
 
 @router.post("/rechnung/erstellen")
 async def rechnung_erstellen(anfrage: RechnungErstellen):
     rechnungs_id = "inv_" + uuid.uuid4().hex[:8]
     faellig = datetime.utcnow() + timedelta(days=anfrage.faelligkeit_tage)
     
-    rechnung = {
-        "id": rechnungs_id,
-        "kunden_email": anfrage.kunden_email,
-        "betrag": anfrage.betrag,
-        "beschreibung": anfrage.beschreibung,
-        "status": "sent",
-        "faelligkeitsdatum": faellig,
-        "zahlungs_link": "https://pay.revenueagentroute.com/" + rechnungs_id
-    }
+    rechnung = {"id": rechnungs_id, "kunden_email": anfrage.kunden_email, "betrag": anfrage.betrag, "beschreibung": anfrage.beschreibung, "status": "sent", "faelligkeitsdatum": faellig, "zahlungs_link": "https://pay.revenueagentroute.com/" + rechnungs_id}
     rechnungs_speicher[rechnungs_id] = rechnung
     return {"status": "success", "rechnung": rechnung}
 
@@ -747,11 +562,7 @@ async def process_incoming_payment(payload: PaymentWebhookPayload):
         rechnungs_speicher[payload.invoice_id]["status"] = "paid"
     
     TreasuryWalletEngine.register_income(payload.paid_amount)
-    return {
-        "status": "income_registered",
-        "total_bank_earnings_usd": TreasuryWalletEngine.total_bank_earnings_usd,
-        "current_level": TreasuryWalletEngine.current_level.value
-    }
+    return {"status": "income_registered", "total_bank_earnings_usd": TreasuryWalletEngine.total_bank_earnings_usd, "current_level": TreasuryWalletEngine.current_level.value}
 
 @router.post("/excel/import")
 @limiter.limit("5/minute")
@@ -771,18 +582,9 @@ async def get_all_leads(status: Optional[str] = None):
 
 @router.post("/task/starten")
 async def task_starten(req: TaskAnfrage):
-    ergebnis = await SmartAIRouter.call_llm_efficient(
-        "Fuehre Sparte " + req.sparte.value + " fuer " + req.ziel_branche + " aus.",
-        req.sparte.value
-    )
+    ergebnis = await SmartAIRouter.call_llm_efficient("Fuehre Sparte " + req.sparte.value + " fuer " + req.ziel_branche + " aus.", req.sparte.value)
     task_id = "task_" + uuid.uuid4().hex[:8]
-    task_speicher[task_id] = {
-        "id": task_id,
-        "sparte": req.sparte.value,
-        "ziel_branche": req.ziel_branche,
-        "ergebnis": ergebnis,
-        "status": "completed"
-    }
+    task_speicher[task_id] = {"id": task_id, "sparte": req.sparte.value, "ziel_branche": req.ziel_branche, "ergebnis": ergebnis, "status": "completed"}
     return {"status": "completed", "task_id": task_id, "ergebnis": ergebnis}
 
 @router.get("/sparten/alle")
@@ -811,9 +613,6 @@ async def evolution_deployen(code: str):
 async def evolution_history_abrufen():
     return {"evolution": evolution_history[-20:]}
 
-# ============================================================================
-# LIFESPAN & APP
-# ============================================================================
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global global_http_client
@@ -823,11 +622,7 @@ async def lifespan(app: FastAPI):
     await global_http_client.aclose()
     gc.collect()
 
-app = FastAPI(
-    title="RevenueAgentRoute V19.1.0",
-    version="19.1.0",
-    lifespan=lifespan
-)
+app = FastAPI(title="RevenueAgentRoute V19.1.0", version="19.1.0", lifespan=lifespan)
 
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, lambda req, exc: JSONResponse(status_code=429, content={"detail": "Rate limit exceeded"}))
