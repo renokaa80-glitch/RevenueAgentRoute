@@ -777,4 +777,4 @@ async def health_check():
 @router.get("/wallet/status")
 async def get_wallet_status():
     return {
-        "total_bank_
+        "
