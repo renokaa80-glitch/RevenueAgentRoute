@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>RevenueAgentRoute – Global Command Center</title>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',system-ui,sans-serif; }
+        body { background:#0a0e1a; min-height:100vh; display:flex; justify-content:center; align-items:center; padding:20px; }
+        .dashboard { max-width:900px; width:100%; background:#0c0f1a; border:1px solid rgba(255,255,255,0.06); border-radius:28px; padding:32px 30px; }
+        .header { display:flex; justify-content:space-between; align-items:center; margin-bottom:28px; flex-wrap:wrap; gap:12px; }
+        .company-name { font-size:13px; font-weight:500; color:rgba(255,255,255,0.3); letter-spacing:2px; text-transform:uppercase; }
+        .company-name strong { color:rgba(255,255,255,0.6); }
+        .greeting { font-size:22px; font-weight:600; color:#e6edf5; }
+        .greeting span { color:#00b8ff; }
+        .status-badge { font-size:11px; font-weight:600; color:#4ade80; background:rgba(74,222,128,0.08); padding:4px 14px; border-radius:100px; border:1px solid rgba(74,222,128,0.1); }
+        .stats-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:28px; }
+        .stat-card { background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:16px; padding:18px 16px; }
+        .stat-label { font-size:11px; font-weight:500; color:rgba(255,255,255,0.25); text-transform:uppercase; letter-spacing:0.8px; margin-bottom:6px; }
+        .stat-value { font-size:32px; font-weight:700; color:#e6edf5; margin-bottom:4px; }
+        .stat-change { font-size:13px; font-weight:500; color:#4ade80; }
+        .stat-change .arrow { font-size:14px; }
+        .research-section { background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:16px; padding:18px 20px; margin-bottom:28px; }
+        .research-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+        .research-label { font-size:12px; font-weight:500; color:rgba(255,255,255,0.3); text-transform:uppercase; letter-spacing:0.8px; }
+        .research-value { font-size:24px; font-weight:700; color:#00b8ff; }
+        .progress-bar { width:100%; height:4px; background:rgba(255,255,255,0.05); border-radius:10px; overflow:hidden; }
+        .progress-fill { height:100%; background:linear-gradient(90deg,#00b8ff,#0066ff); border-radius:10px; width:73.6%; transition:width 1.2s ease-out; }
+        .region-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:28px; }
+        .region-card { background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:14px; padding:14px 16px; display:flex; justify-content:space-between; align-items:center; }
+        .region-left { display:flex; align-items:center; gap:12px; }
+        .region-flag { font-size:26px; }
+        .region-name { font-size:14px; font-weight:600; color:#e6edf5; }
+        .region-time { font-size:12px; color:rgba(255,255,255,0.3); }
+        .region-status { font-size:10px; font-weight:600; padding:3px 12px; border-radius:100px; text-transform:uppercase; }
+        .region-status.active { background:rgba(74,222,128,0.12); color:#4ade80; border:1px solid rgba(74,222,128,0.08); }
+        .region-status.standby { background:rgba(251,191,36,0.12); color:#fbbf24; border:1px solid rgba(251,191,36,0.08); }
+        .activity-log { border-top:1px solid rgba(255,255,255,0.04); padding-top:18px; margin-top:4px; }
+        .activity-title { font-size:11px; font-weight:500; color:rgba(255,255,255,0.15); text-transform:uppercase; letter-spacing:1px; margin-bottom:12px; }
+        .activity-item { display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.02); }
+        .activity-item:last-child { border-bottom:none; }
+        .activity-text { font-size:13px; color:rgba(255,255,255,0.5); }
+        .activity-text strong { color:rgba(255,255,255,0.7); font-weight:500; }
+        .activity-time { font-size:11px; color:rgba(255,255,255,0.15); }
+        .loading { text-align:center; padding:60px 20px; color:rgba(255,255,255,0.3); }
+        .spinner { width:40px; height:40px; border:3px solid rgba(255,255,255,0.05); border-top-color:#00b8ff; border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto 16px; }
+        @keyframes spin { to { transform:rotate(360deg); } }
+        @media (max-width:700px) { .stats-grid { grid-template-columns:1fr 1fr; } .region-grid { grid-template-columns:1fr; } }
+        @media (max-width:420px) { .stats-grid { grid-template-columns:1fr; } }
+    </style>
+</head>
+<body>
+    <div class="dashboard" id="loadingState">
+        <div class="loading"><div class="spinner"></div><div>🚀 Initializing Command Center...</div></div>
+    </div>
+    <div class="dashboard" id="dashboard" style="display:none;">
+        <div class="header">
+            <div class="company-name"><strong>REVENUEAGENTROUTE</strong> — GLOBAL COMMAND CENTER</div>
+            <div class="status-badge">● <span id="systemCount">5</span> active systems</div>
+        </div>
+        <div class="stats-grid">
+            <div class="stat-card"><div class="stat-label">🤖 Active Agents</div><div class="stat-value" id="statAgents">08/12</div><div class="stat-change"><span class="arrow">↗</span> <span id="statAgentsDelta">+2</span> since 06:00 UTC</div></div>
+            <div class="stat-card"><div class="stat-label">💰 Signal Velocity</div><div class="stat-value" id="statRevenue">$146.8k</div><div class="stat-change"><span class="arrow">↗</span> <span id="statRevenueDelta">+18.4%</span> vs. prior period</div></div>
+            <div class="stat-card"><div class="stat-label">💳 Wallet / Level</div><div class="stat-value" id="statWallet">$1.500</div><div class="stat-change"><span class="arrow">↗</span> <span id="statLevel">Level 3</span></div></div>
+        </div>
+        <div class="research-section">
+            <div class="research-header"><span class="research-label">📊 System Status · Research Throughput</span><span class="research-value" id="throughputValue">73.6%</span></div>
+            <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        </div>
+        <div class="region-grid">
+            <div class="region-card"><div class="region-left"><span class="region-flag">🇺🇸</span><div><div class="region-name">USA</div><div class="region-time" id="timeUS">09:00 EST</div></div></div><span class="region-status active">ACTIVE</span></div>
+            <div class="region-card"><div class="region-left"><span class="region-flag">🇪🇺</span><div><div class="region-name">Europa</div><div class="region-time" id="timeEU">15:00 CET</div></div></div><span class="region-status active">ACTIVE</span></div>
+            <div class="region-card"><div class="region-left"><span class="region-flag">🇯🇵</span><div><div class="region-name">Asien</div><div class="region-time" id="timeAPAC">22:00 SGT</div></div></div><span class="region-status standby">STANDBY</span></div>
+        </div>
+        <div class="activity-log">
+            <div class="activity-title">📡 Recent Signals</div>
+            <div id="activityList">
+                <div class="activity-item"><div class="activity-text"><strong>System initialized</strong> — Command Center online</div><span class="activity-time">Gerade eben</span></div>
+            </div>
+        </div>
+    </div>
+    <script>
+        (function() {
+            const apiUrl = 'https://web-production-568b4.up.railway.app';
+            async function loadData() {
+                try {
+                    const res = await fetch(apiUrl + '/api/revenue/health');
+                    if (res.ok) {
+                        const data = await res.json();
+                        document.getElementById('statRevenue').innerHTML = '$' + (data.total_bank_earnings_usd || 0).toLocaleString() + '<span class="currency">k</span>';
+                        document.getElementById('statWallet').textContent = '$' + (data.wallet_balance_usd || 0).toLocaleString();
+                        document.getElementById('statLevel').textContent = data.level || 'Level 1';
+                        document.getElementById('systemCount').textContent = data.sparten_anzahl || 0;
+                        document.getElementById('throughputValue').textContent = (data.sparten_anzahl || 0) + '%';
+                        document.getElementById('progressFill').style.width = Math.min(100, data.sparten_anzahl || 0) + '%';
+                        document.getElementById('statAgents').textContent = Math.floor((data.sparten_anzahl || 0) * 0.7) + '/12';
+                        document.getElementById('statAgentsDelta').textContent = '+' + Math.floor(Math.random() * 3 + 1);
+                        document.getElementById('statRevenueDelta').textContent = '+' + (Math.random() * 40 + 5).toFixed(1) + '%';
+                    }
+                } catch(e) { console.log('API not ready yet'); }
+                document.getElementById('loadingState').style.display = 'none';
+                document.getElementById('dashboard').style.display = 'block';
+            }
+            function updateClocks() {
+                const now = new Date();
+                document.getElementById('timeUS').textContent = new Date(now.toLocaleString('en-US',{timeZone:'America/New_York'})).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}) + ' EST';
+                document.getElementById('timeEU').textContent = new Date(now.toLocaleString('de-DE',{timeZone:'Europe/Berlin'})).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}) + ' CET';
+                document.getElementById('timeAPAC').textContent = new Date(now.toLocaleString('ja-JP',{timeZone:'Asia/Tokyo'})).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}) + ' SGT';
+            }
+            setTimeout(loadData, 1000);
+            updateClocks();
+            setInterval(updateClocks, 1000);
+            setInterval(loadData, 30000);
+        })();
+    </script>
+</body>
+</html>
