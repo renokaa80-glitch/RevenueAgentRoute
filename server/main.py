@@ -1,5 +1,7 @@
 # ============================================================================
-# REVENUEAGENTROUTE – V19.1.0 (SERVER-MODUL)
+# REVENUEAGENTROUTE – V20.0.0 (HARDENED EDITION)
+# Security: Bcrypt auth, restricted CORS, security headers, Stripe verification
+# Performance: Async client pooling, semantic caching, Prometheus metrics
 # ============================================================================
 
 import asyncio
@@ -8,8 +10,10 @@ import io
 import json
 import logging
 import os
+import secrets
 import uuid
 import hashlib
+import re
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 from enum import Enum
@@ -18,7 +22,7 @@ from collections import defaultdict
 
 import httpx
 import stripe
-from fastapi import FastAPI, APIRouter, HTTPException, Request, Depends, File, UploadFile
+from fastapi import FastAPI, APIRouter, HTTPException, Request, Depends, Header, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -30,28 +34,58 @@ from slowapi.util import get_remote_address
 from slowapi.middleware import SlowAPIMiddleware
 from slowapi.errors import RateLimitExceeded
 
+from prometheus_fastapi_instrumentator import Instrumentator
+
 import pandas as pd
 import openpyxl
+from passlib.context import CryptContext
 
 from dotenv import load_dotenv
 load_dotenv()
 
 # ===== LOGGING =====
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger("RevenueAgent_V19")
+logger = logging.getLogger("RevenueAgent_V20")
 
 limiter = Limiter(key_func=get_remote_address)
 
-# ===== KONFIGURATION =====
-GEHEIMER_SCHLUESSEL = os.getenv("SECRET_KEY", "super-geheimer-produktionsschluessel-bitte-aendern")
+# ===== SECURITY CONFIG =====
+# FAIL FAST: No weak defaults in production
+ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
+IS_PROD = ENVIRONMENT == "production"
+
+GEHEIMER_SCHLUESSEL = os.getenv("SECRET_KEY", "")
+if not GEHEIMER_SCHLUESSEL:
+    if IS_PROD:
+        raise RuntimeError("FATAL: SECRET_KEY environment variable is required in production!")
+    GEHEIMER_SCHLUESSEL = "dev-only-not-for-production-use"
+
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
-STRIPE_GEHEIMER_SCHLUESSEL = os.getenv("STRIPE_SECRET_KEY", "sk_test_...")
+STRIPE_GEHEIMER_SCHLUESSEL = os.getenv("STRIPE_SECRET_KEY", "")
+STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "")
+
+# Admin credentials from env vars (no hardcoded passwords)
+ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
+ADMIN_PASSWORD_HASH = os.getenv("ADMIN_PASSWORD_HASH", "")
+# Fallback: hash a default password for dev only
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+if not ADMIN_PASSWORD_HASH:
+    if IS_PROD:
+        raise RuntimeError("FATAL: ADMIN_PASSWORD_HASH environment variable is required in production!")
+    ADMIN_PASSWORD_HASH = pwd_context.hash("changeme")
 
 stripe.api_key = STRIPE_GEHEIMER_SCHLUESSEL
 
+# CORS: Restricted origins only
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "").split(",")
+if not ALLOWED_ORIGINS or not ALLOWED_ORIGINS[0]:
+    if IS_PROD:
+        ALLOWED_ORIGINS = ["https://web-production-e28af.up.railway.app"]
+    else:
+        ALLOWED_ORIGINS = ["http://localhost:3000", "http://localhost:8000", "http://127.0.0.1:3000"]
+
 # ===== GLOBALE SPEICHER =====
 global_http_client: Optional[httpx.AsyncClient] = None
-
 semantic_response_cache: Dict[str, dict] = {}
 excel_imports: List[Dict] = []
 lead_campaigns: List[Dict] = []
@@ -60,26 +94,32 @@ rechnungs_speicher: Dict[str, dict] = {}
 task_speicher: Dict[str, dict] = {}
 evolution_history: List[Dict] = []
 
-current_version: str = "19.1.0"
+current_version: str = "20.0.0"
 
-# ===== AUTH =====
+# ===== AUTH (BCRYPT-BASIERT) =====
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/revenue/token")
 
-fake_users_db = {
-    "admin": {"username": "admin", "password": "securepassword", "role": "admin"},
-}
+def verify_password(plain: str, hashed: str) -> bool:
+    try:
+        return pwd_context.verify(plain, hashed)
+    except Exception:
+        return False
 
 def create_access_token(data: dict) -> str:
     to_encode = data.copy()
-    to_encode.update({"exp": datetime.utcnow() + timedelta(days=30)})
+    to_encode.update({"exp": datetime.now(timezone.utc) + timedelta(hours=24)})
     return jwt.encode(to_encode, GEHEIMER_SCHLUESSEL, algorithm="HS256")
 
 async def get_current_user(token: str = Depends(oauth2_scheme)):
     try:
         payload = jwt.decode(token, GEHEIMER_SCHLUESSEL, algorithms=["HS256"])
+        if payload.get("sub") != ADMIN_USERNAME:
+            raise HTTPException(status_code=401, detail="Ungueltiger Token")
         return payload
-    except:
-        raise HTTPException(status_code=401, detail="Ungültiger Token")
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token abgelaufen")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Ungueltiger Token")
 
 # ===== SYSTEM LEVEL =====
 class SystemLevel(str, Enum):
@@ -221,14 +261,16 @@ class SmartAIRouter:
     
     @classmethod
     async def call_llm_efficient(cls, prompt: str, sparte: str) -> str:
-        cache_key = hashlib.md5((sparte + ":" + prompt).encode()).hexdigest()
-        if cache_key in semantic_response_cache:
-            return semantic_response_cache[cache_key]["response"]
+        # SHA-256 statt MD5 fuer sicherere Cache-Keys
+        cache_key = hashlib.sha256((sparte + ":" + prompt).encode()).hexdigest()
+        cached = semantic_response_cache.get(cache_key)
+        if cached and (datetime.now(timezone.utc) - cached["time"]).total_seconds() < 3600:
+            return cached["response"]
         
         model = cls.get_model_for_sparte(sparte)
         if not OPENAI_API_KEY or global_http_client is None:
             simulated = f"Simulierte KI-Optimierung fuer {sparte} [Modell: {model}]."
-            semantic_response_cache[cache_key] = {"response": simulated, "time": datetime.utcnow()}
+            semantic_response_cache[cache_key] = {"response": simulated, "time": datetime.now(timezone.utc)}
             return simulated
         
         headers = {"Authorization": f"Bearer {OPENAI_API_KEY}", "Content-Type": "application/json"}
@@ -236,25 +278,22 @@ class SmartAIRouter:
             "model": model,
             "messages": [
                 {"role": "system", "content": "Praezise B2B-Antworten. Keine Fuellwoerter."},
-                {"role": "user", "content": prompt}
+                {"role": "user", "content": prompt[:2000]}  # Input laenge begrenzen
             ],
             "max_tokens": 400,
             "temperature": 0.2
         }
         
         try:
-            res = await global_http_client.post(
-                "https://api.openai.com/v1/chat/completions",
-                headers=headers,
-                json=payload
-            )
-            if res.status_code == 200:
-                text = res.json()["choices"][0]["message"]["content"]
-                semantic_response_cache[cache_key] = {"response": text, "time": datetime.utcnow()}
-                return text
-            return f"API-Fehler: {res.status_code}"
+            async with global_http_client.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload, timeout=15.0) as res:
+                if res.status_code == 200:
+                    text = res.json()["choices"][0]["message"]["content"]
+                    semantic_response_cache[cache_key] = {"response": text, "time": datetime.now(timezone.utc)}
+                    return text
+                return f"API-Fehler: {res.status_code}"
         except Exception as e:
-            return f"Fehler: {str(e)}"
+            logger.error(f"LLM call failed: {type(e).__name__}")
+            return f"Fehler: {type(e).__name__}"
 
 # ===== SELF EVOLUTION ENGINE =====
 class SelfEvolutionEngine:
@@ -263,7 +302,7 @@ class SelfEvolutionEngine:
         prompt = "Analysiere den Code. Finde 3 Verbesserungen."
         verbesserung = await SmartAIRouter.call_llm_efficient(prompt, "self_evolution")
         evolution_history.append({
-            "zeit": datetime.utcnow().isoformat(),
+            "zeit": datetime.now(timezone.utc).isoformat(),
             "verbesserung": verbesserung,
             "version": current_version
         })
@@ -272,6 +311,9 @@ class SelfEvolutionEngine:
     @classmethod
     async def deploy_upgrade(cls, code: str) -> Dict:
         global current_version
+        # SICHERHEIT: Code-Laenge begrenzen, keine echte Code-Ausfuehrung
+        if len(code) > 5000:
+            raise HTTPException(status_code=400, detail="Code zu lang (max 5000 Zeichen)")
         version_parts = current_version.split(".")
         new_minor = int(version_parts[1]) + 1
         current_version = f"{version_parts[0]}.{new_minor}.0"
@@ -281,21 +323,21 @@ class SelfEvolutionEngine:
 class LeadGenAgent:
     async def analysieren(self, aufgabe: str) -> str:
         return await SmartAIRouter.call_llm_efficient(
-            f"Analysiere Zielgruppe fuer: {aufgabe}",
+            f"Analysiere Zielgruppe fuer: {aufgabe[:500]}",
             "cold_outreach_leadgen"
         )
 
 class ContentAgent:
     async def erstellen(self, strategie: str) -> str:
         return await SmartAIRouter.call_llm_efficient(
-            f"Erstelle B2B-Copy fuer Strategie: {strategie}",
+            f"Erstelle B2B-Copy fuer Strategie: {strategie[:500]}",
             "landingpage_copywriting"
         )
 
 class SEOAgent:
     async def optimieren(self, inhalt: str) -> str:
         return await SmartAIRouter.call_llm_efficient(
-            f"Optimiere fuer GEO & SEO: {inhalt}",
+            f"Optimiere fuer GEO & SEO: {inhalt[:500]}",
             "seo_audit_repair"
         )
 
@@ -324,9 +366,13 @@ class ExcelImportEngine:
     async def process_excel(file: UploadFile) -> Dict:
         if not file.filename.endswith((".xlsx", ".xls")):
             raise HTTPException(status_code=400, detail="Nur Excel-Dateien (.xlsx, .xls) erlaubt.")
+        
+        # Dateigroesse begrenzen (10MB max)
+        contents = await file.read()
+        if len(contents) > 10 * 1024 * 1024:
+            raise HTTPException(status_code=413, detail="Datei zu gross (max 10MB)")
 
         try:
-            contents = await file.read()
             df = pd.read_excel(io.BytesIO(contents), engine="openpyxl")
             
             df.columns = [col.strip().lower().replace(" ", "_") for col in df.columns]
@@ -334,10 +380,10 @@ class ExcelImportEngine:
             
             import_record = {
                 "filename": file.filename,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "rows": len(records),
                 "columns": list(df.columns),
-                "data": records
+                "data": records[:100]  # Max 100 Records speichern
             }
             excel_imports.append(import_record)
             
@@ -351,8 +397,8 @@ class ExcelImportEngine:
             }
             
         except Exception as e:
-            logger.error(f"Excel-Import Fehler: {str(e)}")
-            raise HTTPException(status_code=500, detail=f"Fehler beim Verarbeiten der Excel-Datei: {str(e)}")
+            logger.error(f"Excel-Import Fehler: {type(e).__name__}")
+            raise HTTPException(status_code=500, detail="Fehler beim Verarbeiten der Excel-Datei")
 
 # ===== LEAD GENERATION BOTS =====
 class LeadGenerationBots:
@@ -365,7 +411,7 @@ class LeadGenerationBots:
             "budget": budget,
             "status": "active",
             "leads_found": 0,
-            "created_at": datetime.utcnow().isoformat()
+            "created_at": datetime.now(timezone.utc).isoformat()
         }
         lead_campaigns.append(campaign)
         await cls.run_campaign(campaign["id"])
@@ -388,7 +434,7 @@ class LeadGenerationBots:
                     "campaign_id": campaign_id,
                     "data": lead,
                     "status": "new",
-                    "created_at": datetime.utcnow().isoformat()
+                    "created_at": datetime.now(timezone.utc).isoformat()
                 })
                 leads_created += 1
         
@@ -414,38 +460,55 @@ class RechnungErstellen(BaseModel):
     faelligkeit_tage: int = Field(14, ge=1, le=90)
 
 class WalletDepositRequest(BaseModel):
-    amount_usd: float = Field(..., gt=0)
+    amount_usd: float = Field(..., gt=0, le=100000.0)
 
 class PaymentWebhookPayload(BaseModel):
-    invoice_id: str
-    paid_amount: float
+    invoice_id: str = Field(..., max_length=100)
+    paid_amount: float = Field(..., gt=0, le=100000.0)
 
 class TaskAnfrage(BaseModel):
     sparte: AgentTyp
-    ziel_branche: str
+    ziel_branche: str = Field(..., max_length=200)
 
 class OrchestrateAnfrage(BaseModel):
-    aufgabe: str
+    aufgabe: str = Field(..., max_length=1000)
 
 class LeadCampaignRequest(BaseModel):
-    name: str
-    target_industry: str
-    budget: float = 100.0
+    name: str = Field(..., max_length=200)
+    target_industry: str = Field(..., max_length=200)
+    budget: float = Field(100.0, gt=0, le=100000.0)
+
+class EvolutionDeployRequest(BaseModel):
+    code: str = Field(..., max_length=5000)
+
+# ================================================================
+# SECURITY HEADERS MIDDLEWARE
+# ================================================================
+
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+    if IS_PROD:
+        response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains; preload"
+    return response
 
 # ================================================================
 # ROUTER
 # ================================================================
 
-router = APIRouter(prefix="/api/revenue", tags=["RevenueAgent_V19"])
+router = APIRouter(prefix="/api/revenue", tags=["RevenueAgent_V20"])
 
 # ===== AUTH =====
 @router.post("/token")
 @limiter.limit("5/minute")
 async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends()):
-    user = fake_users_db.get(form_data.username)
-    if not user or user["password"] != form_data.password:
-        raise HTTPException(status_code=400, detail="Falscher Benutzername oder Passwort")
-    token = create_access_token({"sub": user["username"], "role": user["role"]})
+    if form_data.username != ADMIN_USERNAME or not verify_password(form_data.password, ADMIN_PASSWORD_HASH):
+        raise HTTPException(status_code=401, detail="Falscher Benutzername oder Passwort")
+    token = create_access_token({"sub": ADMIN_USERNAME, "role": "admin"})
     return {"access_token": token, "token_type": "bearer"}
 
 # ===== HEALTH =====
@@ -464,7 +527,7 @@ async def health_check():
 
 # ===== WALLET =====
 @router.get("/wallet/status")
-async def get_wallet_status():
+async def get_wallet_status(user: dict = Depends(get_current_user)):
     return {
         "total_bank_earnings_usd": TreasuryWalletEngine.total_bank_earnings_usd,
         "wallet_balance_usd": TreasuryWalletEngine.wallet_balance_usd,
@@ -472,7 +535,8 @@ async def get_wallet_status():
     }
 
 @router.post("/wallet/einzahlen")
-async def deposit_to_wallet(req: WalletDepositRequest):
+@limiter.limit("3/minute")
+async def deposit_to_wallet(request: Request, req: WalletDepositRequest, user: dict = Depends(get_current_user)):
     TreasuryWalletEngine.wallet_balance_usd += req.amount_usd
     return {"status": "success", "new_wallet_balance_usd": TreasuryWalletEngine.wallet_balance_usd}
 
@@ -483,9 +547,10 @@ async def get_timezones():
 
 # ===== RECHNUNGEN =====
 @router.post("/rechnung/erstellen")
-async def rechnung_erstellen(anfrage: RechnungErstellen):
+@limiter.limit("10/minute")
+async def rechnung_erstellen(request: Request, anfrage: RechnungErstellen, user: dict = Depends(get_current_user)):
     rechnungs_id = f"inv_{uuid.uuid4().hex[:8]}"
-    faellig = datetime.utcnow() + timedelta(days=anfrage.faelligkeit_tage)
+    faellig = datetime.now(timezone.utc) + timedelta(days=anfrage.faelligkeit_tage)
     
     rechnung = {
         "id": rechnungs_id,
@@ -493,18 +558,36 @@ async def rechnung_erstellen(anfrage: RechnungErstellen):
         "betrag": anfrage.betrag,
         "beschreibung": anfrage.beschreibung,
         "status": "sent",
-        "faelligkeitsdatum": faellig,
+        "faelligkeitsdatum": faellig.isoformat(),
         "zahlungs_link": f"https://pay.revenueagentroute.com/{rechnungs_id}"
     }
     rechnungs_speicher[rechnungs_id] = rechnung
     return {"status": "success", "rechnung": rechnung}
 
+# ===== STRIPE WEBHOOK (mit Signatur-Verifikation) =====
 @router.post("/webhook/zahlung-eingegangen")
-async def process_incoming_payment(payload: PaymentWebhookPayload):
-    if payload.invoice_id in rechnungs_speicher:
-        rechnungs_speicher[payload.invoice_id]["status"] = "paid"
+async def process_incoming_payment(request: Request):
+    # Stripe Signatur verifizieren wenn in Produktion
+    if IS_PROD and STRIPE_WEBHOOK_SECRET:
+        payload = await request.body()
+        sig_header = request.headers.get("stripe-signature", "")
+        try:
+            event = stripe.Webhook.construct_event(
+                payload, sig_header, STRIPE_WEBHOOK_SECRET
+            )
+        except stripe.error.SignatureVerificationError:
+            raise HTTPException(status_code=401, detail="Ungueltige Stripe-Signatur")
+        invoice_id = event.get("data", {}).get("object", {}).get("id", "")
+        paid_amount = event.get("data", {}).get("object", {}).get("amount_total", 0) / 100
+    else:
+        body = await request.json()
+        invoice_id = body.get("invoice_id", "")
+        paid_amount = body.get("paid_amount", 0)
     
-    TreasuryWalletEngine.register_income(payload.paid_amount)
+    if invoice_id in rechnungs_speicher:
+        rechnungs_speicher[invoice_id]["status"] = "paid"
+    
+    TreasuryWalletEngine.register_income(paid_amount)
     return {
         "status": "income_registered",
         "total_bank_earnings_usd": TreasuryWalletEngine.total_bank_earnings_usd,
@@ -514,24 +597,26 @@ async def process_incoming_payment(payload: PaymentWebhookPayload):
 # ===== EXCEL =====
 @router.post("/excel/import")
 @limiter.limit("5/minute")
-async def import_excel(request: Request, file: UploadFile = File(...)):
+async def import_excel(request: Request, file: UploadFile = File(...), user: dict = Depends(get_current_user)):
     result = await ExcelImportEngine.process_excel(file)
     return result
 
 # ===== LEADS =====
 @router.post("/leads/campaign")
-async def create_lead_campaign(req: LeadCampaignRequest):
+@limiter.limit("5/minute")
+async def create_lead_campaign(request: Request, req: LeadCampaignRequest, user: dict = Depends(get_current_user)):
     result = await LeadGenerationBots.create_campaign(req.name, req.target_industry, req.budget)
     return {"status": "campaign_created", "result": result}
 
 @router.get("/leads/all")
-async def get_all_leads(status: Optional[str] = None):
+async def get_all_leads(status: Optional[str] = None, user: dict = Depends(get_current_user)):
     leads_result = await LeadGenerationBots.get_leads(status)
     return {"leads": leads_result, "count": len(leads_result)}
 
 # ===== TASKS =====
 @router.post("/task/starten")
-async def task_starten(req: TaskAnfrage):
+@limiter.limit("10/minute")
+async def task_starten(request: Request, req: TaskAnfrage, user: dict = Depends(get_current_user)):
     ergebnis = await SmartAIRouter.call_llm_efficient(
         f"Fuehre Sparte {req.sparte.value} fuer {req.ziel_branche} aus.",
         req.sparte.value
@@ -553,21 +638,24 @@ async def alle_sparten_auflisten():
 
 # ===== ORCHESTRATE =====
 @router.post("/orchestrate/team-task")
-async def orchestrate_team_task(req: OrchestrateAnfrage):
+@limiter.limit("5/minute")
+async def orchestrate_team_task(request: Request, req: OrchestrateAnfrage, user: dict = Depends(get_current_user)):
     ergebnis = await orchestrator_engine.orchestrate(req.aufgabe)
     return ergebnis
 
 # ===== EVOLUTION =====
 @router.post("/evolution/analyze")
-async def evolution_analysieren():
+@limiter.limit("2/minute")
+async def evolution_analysieren(request: Request, user: dict = Depends(get_current_user)):
     return await SelfEvolutionEngine.analyze_and_improve()
 
 @router.post("/evolution/deploy")
-async def evolution_deployen(code: str):
-    return await SelfEvolutionEngine.deploy_upgrade(code)
+@limiter.limit("2/minute")
+async def evolution_deployen(request: Request, req: EvolutionDeployRequest, user: dict = Depends(get_current_user)):
+    return await SelfEvolutionEngine.deploy_upgrade(req.code)
 
 @router.get("/evolution/history")
-async def evolution_history_abrufen():
+async def evolution_history_abrufen(user: dict = Depends(get_current_user)):
     return {"evolution": evolution_history[-20:]}
 
 # ================================================================
@@ -577,32 +665,41 @@ async def evolution_history_abrufen():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global global_http_client
-    global_http_client = httpx.AsyncClient(timeout=10.0)
-    logger.info("🚀 RevenueAgentRoute V19.1.0 gestartet")
+    global_http_client = httpx.AsyncClient(timeout=15.0)
+    logger.info(f"🚀 RevenueAgentRoute V{current_version} gestartet [{ENVIRONMENT}]")
     yield
     await global_http_client.aclose()
     gc.collect()
 
-app = FastAPI(title="RevenueAgentRoute V19.1.0", version="19.1.0", lifespan=lifespan)
+app = FastAPI(
+    title="RevenueAgentRoute V20.0.0",
+    version=current_version,
+    description="B2B Revenue Operating System - Hardened Edition",
+    lifespan=lifespan
+)
 
+# Rate Limiting
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, lambda req, exc: JSONResponse(status_code=429, content={"detail": "Rate limit exceeded"}))
 app.add_middleware(SlowAPIMiddleware)
 
+# Security Headers Middleware
+app.middleware("http")(add_security_headers)
+
+# CORS: Restricted
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
+    allow_headers=["Authorization", "Content-Type"],
 )
+
+# Prometheus Metrics
+Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 
 app.include_router(router)
 
-# ================================================================
-# MAIN
-# ================================================================
-
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("server.main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("server.main:app", host="0.0.0.0", port=8000)
