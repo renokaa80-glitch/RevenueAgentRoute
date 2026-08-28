@@ -61,11 +61,19 @@ if not GEHEIMER_SCHLUESSEL:
     GEHEIMER_SCHLUESSEL = "dev-only-not-for-production-use"
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
-# Gemini API (Google AI Studio - kostenlos)
+# Groq API (kostenlos, ultra-schnell, OpenAI-kompatibel)
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-# OpenAI-compatible Gemini endpoint
-AI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/" if GEMINI_API_KEY else "https://api.openai.com/v1"
-AI_API_KEY = GEMINI_API_KEY or OPENAI_API_KEY
+# Groq endpoint (OpenAI-kompatibel)
+if GROQ_API_KEY:
+    AI_BASE_URL = "https://api.groq.com/openai/v1"
+    AI_API_KEY = GROQ_API_KEY
+elif GEMINI_API_KEY:
+    AI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/"
+    AI_API_KEY = GEMINI_API_KEY
+else:
+    AI_BASE_URL = "https://api.openai.com/v1"
+    AI_API_KEY = OPENAI_API_KEY
 STRIPE_GEHEIMER_SCHLUESSEL = os.getenv("STRIPE_SECRET_KEY", "")
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "")
 
@@ -99,7 +107,7 @@ rechnungs_speicher: Dict[str, dict] = {}
 task_speicher: Dict[str, dict] = {}
 evolution_history: List[Dict] = []
 
-current_version: str = "20.1.0"
+current_version: str = "20.2.0"
 
 # ===== AUTH (BCRYPT-BASIERT) =====
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/revenue/token")
@@ -253,8 +261,15 @@ class GlobalTimezoneEngine:
 
 # ===== SMART AI ROUTER =====
 class SmartAIRouter:
-    CHEAP_MODEL = "gemini-1.5-flash" if GEMINI_API_KEY else "gpt-4o-mini"
-    ADVANCED_MODEL = "gemini-1.5-pro" if GEMINI_API_KEY else "gpt-4o"
+    if GROQ_API_KEY:
+        CHEAP_MODEL = "openai/gpt-oss-20b"
+        ADVANCED_MODEL = "groq/compound"
+    elif GEMINI_API_KEY:
+        CHEAP_MODEL = "gemini-1.5-flash"
+        ADVANCED_MODEL = "gemini-1.5-pro"
+    else:
+        CHEAP_MODEL = "gpt-4o-mini"
+        ADVANCED_MODEL = "gpt-4o"
     
     @classmethod
     def get_model_for_sparte(cls, sparte: str) -> str:
@@ -677,7 +692,7 @@ async def lifespan(app: FastAPI):
     gc.collect()
 
 app = FastAPI(
-    title="RevenueAgentRoute V20.1.0",
+    title="RevenueAgentRoute V20.2.0",
     version=current_version,
     description="B2B Revenue Operating System - Hardened Edition",
     lifespan=lifespan
@@ -708,4 +723,5 @@ app.include_router(router)
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("server.main:app", host="0.0.0.0", port=8000)
+
 
