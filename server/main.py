@@ -69,7 +69,7 @@ if GROQ_API_KEY:
     AI_BASE_URL = "https://api.groq.com/openai/v1"
     AI_API_KEY = GROQ_API_KEY
 elif GEMINI_API_KEY:
-    AI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/"
+    AI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai"
     AI_API_KEY = GEMINI_API_KEY
 else:
     AI_BASE_URL = "https://api.openai.com/v1"
@@ -305,7 +305,7 @@ class SmartAIRouter:
         }
         
         try:
-            res = await global_http_client.post(f"{AI_BASE_URL}chat/completions", headers=headers, json=payload, timeout=15.0)
+            res = await global_http_client.post(f"{AI_BASE_URL}/chat/completions", headers=headers, json=payload, timeout=15.0)
             if res.status_code == 200:
                 text = res.json()["choices"][0]["message"]["content"]
                 semantic_response_cache[cache_key] = {"response": text, "time": datetime.now(timezone.utc)}
@@ -723,6 +723,7 @@ app.include_router(router)
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("server.main:app", host="0.0.0.0", port=8000)
+
 
 
 
