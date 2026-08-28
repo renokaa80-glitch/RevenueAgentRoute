@@ -3,12 +3,12 @@
   "provider": "python",
   "steps": {
     "install": {
-      "inputs": [{"local": true}],
+      "inputs": ["."],
       "commands": ["pip install -r requirements.txt"]
     }
   },
   "deploy": {
-    "inputs": [{"step": "install"}, {"local": true}],
+    "inputs": ["install", "."],
     "startCommand": "python -m uvicorn server.main:app --host 0.0.0.0 --port $PORT"
   }
 }
