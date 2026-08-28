@@ -24,7 +24,7 @@ import httpx
 import stripe
 from fastapi import FastAPI, APIRouter, HTTPException, Request, Depends, Header, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, HTMLResponse, FileResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel, Field
 import jwt
@@ -76,6 +76,7 @@ else:
     AI_API_KEY = OPENAI_API_KEY
 STRIPE_GEHEIMER_SCHLUESSEL = os.getenv("STRIPE_SECRET_KEY", "")
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "")
+BASE_URL = os.getenv("BASE_URL", "https://web-production-e28af.up.railway.app")
 
 # Admin credentials from env vars (no hardcoded passwords)
 ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
@@ -106,6 +107,8 @@ leads: List[Dict] = []
 rechnungs_speicher: Dict[str, dict] = {}
 task_speicher: Dict[str, dict] = {}
 evolution_history: List[Dict] = []
+kunden_register: Dict[str, dict] = {}
+checkout_sessions: Dict[str, dict] = {}
 
 current_version: str = "20.2.0"
 
@@ -316,6 +319,8 @@ class SmartAIRouter:
             return f"Fehler: {type(e).__name__}"
 
 # ===== SELF EVOLUTION ENGINE =====
+B2BAgent = SmartAIRouter
+
 class SelfEvolutionEngine:
     @classmethod
     async def analyze_and_improve(cls) -> Dict:
@@ -501,6 +506,19 @@ class LeadCampaignRequest(BaseModel):
 class EvolutionDeployRequest(BaseModel):
     code: str = Field(..., max_length=5000)
 
+class KundeRequest(BaseModel):
+    name: str
+    email: str
+    company: str = ""
+
+class CheckoutRequest(BaseModel):
+    service_name: str
+    price: float
+    kunde_email: str
+    kunde_name: str = ""
+    kunde_company: str = ""
+    brief_description: str = ""
+
 # ================================================================
 # SECURITY HEADERS MIDDLEWARE
 # ================================================================
@@ -679,6 +697,139 @@ async def evolution_history_abrufen(user: dict = Depends(get_current_user)):
     return {"evolution": evolution_history[-20:]}
 
 # ================================================================
+# OEFFENTLICHE KUNDEN-ENDPOINTS (PUBLIC / NO AUTH)
+# ================================================================
+
+@router.get('/', include_in_schema=False)
+async def landing_page():
+    possible_paths = ['index.html', os.path.join(os.path.dirname(__file__), '..', 'index.html')]
+    for path in possible_paths:
+        if os.path.exists(path):
+            try:
+                with open(path, 'r', encoding='utf-8') as f:
+                    return HTMLResponse(content=f.read())
+            except Exception:
+                pass
+    return HTMLResponse(content='<h1>RevenueAgentRoute</h1><p>Loading...</p>')
+
+@router.post('/kunde/registrieren')
+async def kunde_registrieren(req: KundeRequest):
+    kunde_id = f"kunde_{uuid.uuid4().hex[:8]}"
+    kunden_register[kunde_id] = {
+        "id": kunde_id,
+        "name": req.name,
+        "email": req.email,
+        "company": req.company,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    return {"status": "success", "kunde_id": kunde_id}
+
+@router.post('/checkout/erstellen')
+async def create_checkout(req: CheckoutRequest):
+    try:
+        session = stripe.checkout.Session.create(
+            payment_method_types=['card'],
+            line_items=[{
+                'price_data': {
+                    'currency': 'eur',
+                    'product_data': {'name': req.service_name},
+                    'unit_amount': int(req.price * 100),
+                },
+                'quantity': 1,
+            }],
+            mode='payment',
+            success_url=f'{BASE_URL}/?status=success',
+            cancel_url=f'{BASE_URL}/?status=cancel',
+            customer_email=req.kunde_email,
+            metadata={
+                'service_name': req.service_name,
+                'brief_description': req.brief_description[:500],
+                'kunde_name': req.kunde_name,
+                'kunde_company': req.kunde_company,
+            }
+        )
+        checkout_sessions[session.id] = {
+            'service': req.service_name,
+            'email': req.kunde_email,
+            'description': req.brief_description,
+            'paid': False,
+            'result': None
+        }
+        return {'status': 'success', 'checkout_url': session.url}
+    except Exception as e:
+        return {'status': 'error', 'message': str(e)}
+
+@router.post('/webhook/stripe')
+@router.post('/webhook/stripe-checkout')
+async def stripe_checkout_webhook(request: Request):
+    payload = await request.body()
+    sig_header = request.headers.get('stripe-signature', '')
+    event = None
+    if STRIPE_WEBHOOK_SECRET and sig_header:
+        try:
+            event = stripe.Webhook.construct_event(payload, sig_header, STRIPE_WEBHOOK_SECRET)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=str(e))
+    else:
+        try:
+            event = json.loads(payload.decode('utf-8'))
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=str(e))
+    
+    if event is not None:
+        event_type = event.get('type') if isinstance(event, dict) else getattr(event, 'type', None)
+        if not event_type and hasattr(event, '__getitem__'):
+            try:
+                event_type = event['type']
+            except Exception:
+                pass
+
+        if event_type == 'checkout.session.completed':
+            if isinstance(event, dict):
+                session_obj = event.get('data', {}).get('object', {})
+            else:
+                session_obj = event['data']['object']
+            
+            session_id = session_obj.get('id') if isinstance(session_obj, dict) else getattr(session_obj, 'id', None)
+            if not session_id and hasattr(session_obj, '__getitem__'):
+                try:
+                    session_id = session_obj['id']
+                except Exception:
+                    pass
+
+            if session_id and session_id in checkout_sessions:
+                checkout_sessions[session_id]['paid'] = True
+                service = checkout_sessions[session_id]['service']
+                description = checkout_sessions[session_id]['description']
+                try:
+                    result = await B2BAgent.call_llm_efficient(
+                        f'Erstelle einen professionellen {service} Plan für: {description}',
+                        service
+                    )
+                    checkout_sessions[session_id]['result'] = result
+                except Exception as e:
+                    checkout_sessions[session_id]['result'] = f'Fehler: {e}'
+    return {'status': 'success'}
+
+@router.get('/kunde/ergebnis/{session_id}')
+async def get_kunde_ergebnis(session_id: str):
+    if session_id not in checkout_sessions:
+        return {'status': 'error', 'result': 'Session nicht gefunden'}
+    
+    sess = checkout_sessions[session_id]
+    if not sess.get('paid'):
+        return {'status': 'pending', 'result': 'Zahlung ausstehend'}
+    
+    res = sess.get('result')
+    if res is None:
+        return {'status': 'pending', 'result': 'Ergebnis wird generiert'}
+    elif isinstance(res, str) and res.startswith('Fehler:'):
+        return {'status': 'error', 'result': res}
+    else:
+        return {'status': 'success', 'result': res}
+
+
+# ================================================================
 # FASTAPI APP
 # ================================================================
 
@@ -719,6 +870,10 @@ app.add_middleware(
 Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 
 app.include_router(router)
+@app.get("/", include_in_schema=False)
+async def root_landing_page():
+    return await landing_page()
+
 
 if __name__ == "__main__":
     import uvicorn
