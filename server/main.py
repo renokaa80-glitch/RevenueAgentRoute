@@ -61,6 +61,11 @@ if not GEHEIMER_SCHLUESSEL:
     GEHEIMER_SCHLUESSEL = "dev-only-not-for-production-use"
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+# Gemini API (Google AI Studio - kostenlos)
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+# OpenAI-compatible Gemini endpoint
+AI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/" if GEMINI_API_KEY else "https://api.openai.com/v1"
+AI_API_KEY = GEMINI_API_KEY or OPENAI_API_KEY
 STRIPE_GEHEIMER_SCHLUESSEL = os.getenv("STRIPE_SECRET_KEY", "")
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "")
 
@@ -94,7 +99,7 @@ rechnungs_speicher: Dict[str, dict] = {}
 task_speicher: Dict[str, dict] = {}
 evolution_history: List[Dict] = []
 
-current_version: str = "20.0.0"
+current_version: str = "20.1.0"
 
 # ===== AUTH (BCRYPT-BASIERT) =====
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/revenue/token")
@@ -248,8 +253,8 @@ class GlobalTimezoneEngine:
 
 # ===== SMART AI ROUTER =====
 class SmartAIRouter:
-    CHEAP_MODEL = "gpt-4o-mini"
-    ADVANCED_MODEL = "gpt-4o"
+    CHEAP_MODEL = "gemini-1.5-flash" if GEMINI_API_KEY else "gpt-4o-mini"
+    ADVANCED_MODEL = "gemini-1.5-pro" if GEMINI_API_KEY else "gpt-4o"
     
     @classmethod
     def get_model_for_sparte(cls, sparte: str) -> str:
@@ -268,12 +273,12 @@ class SmartAIRouter:
             return cached["response"]
         
         model = cls.get_model_for_sparte(sparte)
-        if not OPENAI_API_KEY or global_http_client is None:
+        if not AI_API_KEY or global_http_client is None:
             simulated = f"Simulierte KI-Optimierung fuer {sparte} [Modell: {model}]."
             semantic_response_cache[cache_key] = {"response": simulated, "time": datetime.now(timezone.utc)}
             return simulated
         
-        headers = {"Authorization": f"Bearer {OPENAI_API_KEY}", "Content-Type": "application/json"}
+        headers = {"Authorization": f"Bearer {AI_API_KEY}", "Content-Type": "application/json"}
         payload = {
             "model": model,
             "messages": [
@@ -285,7 +290,7 @@ class SmartAIRouter:
         }
         
         try:
-            async with global_http_client.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload, timeout=15.0) as res:
+            async with global_http_client.post(f"{AI_BASE_URL}chat/completions", headers=headers, json=payload, timeout=15.0) as res:
                 if res.status_code == 200:
                     text = res.json()["choices"][0]["message"]["content"]
                     semantic_response_cache[cache_key] = {"response": text, "time": datetime.now(timezone.utc)}
@@ -672,7 +677,7 @@ async def lifespan(app: FastAPI):
     gc.collect()
 
 app = FastAPI(
-    title="RevenueAgentRoute V20.0.0",
+    title="RevenueAgentRoute V20.1.0",
     version=current_version,
     description="B2B Revenue Operating System - Hardened Edition",
     lifespan=lifespan
@@ -703,3 +708,4 @@ app.include_router(router)
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("server.main:app", host="0.0.0.0", port=8000)
+
