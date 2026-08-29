@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RevenueAgentRoute — 70 KI-Agenten die Ihr Geschäft skalieren</title>
+  <title>RevenueAgentRoute — <span data-i18n="hero_title">70 KI-Agenten die Ihr Geschäft skalieren</span></title>
   <meta name="description" content="B2B KI-Agenten Plattform: Lead-Generierung, SEO-Audits, Copywriting, CRO und mehr in unter 30 Sekunden. DSGVO-konform & 24/7 verfügbar.">
   
   <!-- Stripe.js External Dependency -->
@@ -1130,14 +1130,19 @@
 
       <nav>
         <ul class="nav-links" id="navLinks">
-          <li><a href="#services">Services</a></li>
-          <li><a href="#pricing">Pricing</a></li>
-          <li><a href="#how-it-works">How it works</a></li>
+          <li><a href="#services" data-i18n="nav_services">Services</a></li>
+          <li><a href="#pricing" data-i18n="nav_pricing">Pricing</a></li>
+          <li><a href="#how-it-works" data-i18n="nav_how">How it works</a></li>
         </ul>
       </nav>
 
       <div class="nav-actions">
-        <button onclick="startCheckout('Kostenlose Testphase', '0.00')" class="btn btn-primary" style="padding: 10px 20px; font-size: 0.9rem;">Jetzt starten</button>
+        <div class="lang-selector" style="display:flex;gap:4px;align-items:center;margin-right:8px">
+          <button onclick="setLang('de')" id="lang-de" class="lang-btn lang-active" style="background:rgba(78,168,255,0.15);border:1px solid rgba(78,168,255,0.3);color:#4ea8ff;padding:6px 10px;border-radius:6px;font-size:0.8rem;cursor:pointer;font-weight:600">DE</button>
+          <button onclick="setLang('en')" id="lang-en" class="lang-btn" style="background:transparent;border:1px solid rgba(255,255,255,0.1);color:#888;padding:6px 10px;border-radius:6px;font-size:0.8rem;cursor:pointer;font-weight:600">EN</button>
+          <button onclick="setLang('pt')" id="lang-pt" class="lang-btn" style="background:transparent;border:1px solid rgba(255,255,255,0.1);color:#888;padding:6px 10px;border-radius:6px;font-size:0.8rem;cursor:pointer;font-weight:600">PT</button>
+        </div>
+        <button onclick="startCheckout('Kostenlose Testphase', '0.00')" class="btn btn-primary" style="padding: 10px 20px; font-size: 0.9rem;" data-i18n="cta_start">Jetzt starten</button>
         <button class="mobile-toggle" id="mobileToggle" aria-label="Menü öffnen">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
         </button>
@@ -1150,11 +1155,11 @@
     <div class="container">
       <div class="badge">
         <span class="badge-dot"></span>
-        70 KI-Agenten Live
+        <span data-i18n="badge_live">70 KI-Agenten Live</span>
       </div>
 
       <h1 class="hero-title">
-        70 KI-Agenten die Ihr Geschäft skalieren
+        <span data-i18n="hero_title">70 KI-Agenten die Ihr Geschäft skalieren</span>
       </h1>
 
       <p class="hero-subtitle">
@@ -1229,9 +1234,9 @@
   <section class="services-section" id="services">
     <div class="container">
       <div class="section-header">
-        <div class="badge">Top Services</div>
-        <h2 class="section-title">High-Impact KI-Agenten</h2>
-        <p class="section-subtitle">Wählen Sie aus unseren beliebtesten B2B-Agenten für €9.99 pro Task.</p>
+        <div class="badge" data-i18n="badge_top">Top Services</div>
+        <h2 class="section-title" data-i18n="section_services">High-Impact KI-Agenten</h2>
+        <p class="section-subtitle" data-i18n="section_services_sub">Wählen Sie aus unseren beliebtesten B2B-Agenten für €9.99 pro Task.</p>
       </div>
 
       <div class="services-grid">
@@ -1247,7 +1252,7 @@
           </div>
           <div class="service-footer">
             <div class="service-price">€9.99 <span>pro Task</span></div>
-            <button onclick="startCheckout('Cold Outreach Lead-Gen', '9.99')" class="btn btn-card">Jetzt buchen</button>
+            <button onclick="startCheckout('Cold Outreach Lead-Gen', '9.99')" class="btn btn-card" data-i18n="btn_book">Jetzt buchen</button>
           </div>
         </div>
 
@@ -1262,7 +1267,7 @@
           </div>
           <div class="service-footer">
             <div class="service-price">€9.99 <span>pro Task</span></div>
-            <button onclick="startCheckout('SEO Audit & Repair', '9.99')" class="btn btn-card">Jetzt buchen</button>
+            <button onclick="startCheckout('SEO Audit & Repair', '9.99')" class="btn btn-card" data-i18n="btn_book">Jetzt buchen</button>
           </div>
         </div>
 
@@ -1277,7 +1282,7 @@
           </div>
           <div class="service-footer">
             <div class="service-price">€9.99 <span>pro Task</span></div>
-            <button onclick="startCheckout('Social Reputation Management', '9.99')" class="btn btn-card">Jetzt buchen</button>
+            <button onclick="startCheckout('Social Reputation Management', '9.99')" class="btn btn-card" data-i18n="btn_book">Jetzt buchen</button>
           </div>
         </div>
 
@@ -1292,7 +1297,7 @@
           </div>
           <div class="service-footer">
             <div class="service-price">€9.99 <span>pro Task</span></div>
-            <button onclick="startCheckout('Landingpage Copywriting', '9.99')" class="btn btn-card">Jetzt buchen</button>
+            <button onclick="startCheckout('Landingpage Copywriting', '9.99')" class="btn btn-card" data-i18n="btn_book">Jetzt buchen</button>
           </div>
         </div>
 
@@ -1307,7 +1312,7 @@
           </div>
           <div class="service-footer">
             <div class="service-price">€9.99 <span>pro Task</span></div>
-            <button onclick="startCheckout('Conversion Rate Optimization', '9.99')" class="btn btn-card">Jetzt buchen</button>
+            <button onclick="startCheckout('Conversion Rate Optimization', '9.99')" class="btn btn-card" data-i18n="btn_book">Jetzt buchen</button>
           </div>
         </div>
 
@@ -1322,7 +1327,7 @@
           </div>
           <div class="service-footer">
             <div class="service-price">€9.99 <span>pro Task</span></div>
-            <button onclick="startCheckout('Google Business Local SEO', '9.99')" class="btn btn-card">Jetzt buchen</button>
+            <button onclick="startCheckout('Google Business Local SEO', '9.99')" class="btn btn-card" data-i18n="btn_book">Jetzt buchen</button>
           </div>
         </div>
 
@@ -1337,7 +1342,7 @@
           </div>
           <div class="service-footer">
             <div class="service-price">€9.99 <span>pro Task</span></div>
-            <button onclick="startCheckout('Programmatic Content SEO', '9.99')" class="btn btn-card">Jetzt buchen</button>
+            <button onclick="startCheckout('Programmatic Content SEO', '9.99')" class="btn btn-card" data-i18n="btn_book">Jetzt buchen</button>
           </div>
         </div>
 
@@ -1352,7 +1357,7 @@
           </div>
           <div class="service-footer">
             <div class="service-price">€9.99 <span>pro Task</span></div>
-            <button onclick="startCheckout('Email Template Design', '9.99')" class="btn btn-card">Jetzt buchen</button>
+            <button onclick="startCheckout('Email Template Design', '9.99')" class="btn btn-card" data-i18n="btn_book">Jetzt buchen</button>
           </div>
         </div>
 
@@ -1367,7 +1372,7 @@
           </div>
           <div class="service-footer">
             <div class="service-price">€9.99 <span>pro Task</span></div>
-            <button onclick="startCheckout('Case Study Generator', '9.99')" class="btn btn-card">Jetzt buchen</button>
+            <button onclick="startCheckout('Case Study Generator', '9.99')" class="btn btn-card" data-i18n="btn_book">Jetzt buchen</button>
           </div>
         </div>
 
@@ -1382,7 +1387,7 @@
           </div>
           <div class="service-footer">
             <div class="service-price">€9.99 <span>pro Task</span></div>
-            <button onclick="startCheckout('B2B CRM Enrichment', '9.99')" class="btn btn-card">Jetzt buchen</button>
+            <button onclick="startCheckout('B2B CRM Enrichment', '9.99')" class="btn btn-card" data-i18n="btn_book">Jetzt buchen</button>
           </div>
         </div>
 
@@ -1397,7 +1402,7 @@
           </div>
           <div class="service-footer">
             <div class="service-price">€9.99 <span>pro Task</span></div>
-            <button onclick="startCheckout('Competitor Price Monitoring', '9.99')" class="btn btn-card">Jetzt buchen</button>
+            <button onclick="startCheckout('Competitor Price Monitoring', '9.99')" class="btn btn-card" data-i18n="btn_book">Jetzt buchen</button>
           </div>
         </div>
 
@@ -1412,7 +1417,7 @@
           </div>
           <div class="service-footer">
             <div class="service-price">€9.99 <span>pro Task</span></div>
-            <button onclick="startCheckout('Cloud Cost Optimization', '9.99')" class="btn btn-card">Jetzt buchen</button>
+            <button onclick="startCheckout('Cloud Cost Optimization', '9.99')" class="btn btn-card" data-i18n="btn_book">Jetzt buchen</button>
           </div>
         </div>
 
@@ -1424,9 +1429,9 @@
   <section class="how-section" id="how-it-works">
     <div class="container">
       <div class="section-header">
-        <div class="badge">Einfacher Prozess</div>
-        <h2 class="section-title">How it works</h2>
-        <p class="section-subtitle">Drei Schritte zu Ihrem perfekten KI-Ergebnis.</p>
+        <div class="badge" data-i18n="badge_process">Einfacher Prozess</div>
+        <h2 class="section-title" data-i18n="section_how">How it works</h2>
+        <p class="section-subtitle" data-i18n="section_how_sub">Drei Schritte zu Ihrem perfekten KI-Ergebnis.</p>
       </div>
 
       <div class="steps-grid">
@@ -1436,9 +1441,9 @@
           <div class="step-icon">
             <svg viewBox="0 0 24 24"><path d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/></svg>
           </div>
-          <h3 class="step-title">Service wählen</h3>
-          <p class="step-desc">Wählen Sie aus 70 KI-Agenten den passenden Service</p>
-          <div class="step-cta">Zu den Services →</div>
+          <h3 class="step-title" data-i18n="step1_title">Service wählen</h3>
+          <p class="step-desc" data-i18n="step1_desc">Wählen Sie aus 70 KI-Agenten den passenden Service</p>
+          <div class="step-cta" data-i18n="step1_cta">Zu den Services →</div>
         </div>
 
         <!-- Step 2 -->
@@ -1447,9 +1452,9 @@
           <div class="step-icon">
             <svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
           </div>
-          <h3 class="step-title">Bezahlen & Briefing</h3>
-          <p class="step-desc">Sicher bezahlen via Stripe, Ihre Anforderungen angeben</p>
-          <div class="step-cta">Zu den Preisen →</div>
+          <h3 class="step-title" data-i18n="step2_title">Bezahlen & Briefing</h3>
+          <p class="step-desc" data-i18n="step2_desc">Sicher bezahlen via Stripe, Ihre Anforderungen angeben</p>
+          <div class="step-cta" data-i18n="step2_cta">Zu den Preisen →</div>
         </div>
 
         <!-- Step 3 -->
@@ -1458,9 +1463,9 @@
           <div class="step-icon">
             <svg viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
           </div>
-          <h3 class="step-title">Ergebnis erhalten</h3>
-          <p class="step-desc">KI-Agent liefert Ergebnis in unter 30 Sekunden</p>
-          <div class="step-cta">Jetzt starten →</div>
+          <h3 class="step-title" data-i18n="step3_title">Ergebnis erhalten</h3>
+          <p class="step-desc" data-i18n="step3_desc">KI-Agent liefert Ergebnis in unter 30 Sekunden</p>
+          <div class="step-cta" data-i18n="step3_cta">Jetzt starten →</div>
         </div>
       </div>
     </div>
@@ -1470,9 +1475,9 @@
   <section class="pricing-section" id="pricing">
     <div class="container">
       <div class="section-header">
-        <div class="badge">Preise & Pakete</div>
-        <h2 class="section-title">Pricing</h2>
-        <p class="section-subtitle">Wählen Sie den passenden Tarif für Ihre Anforderungen.</p>
+        <div class="badge" data-i18n="badge_pricing">Preise & Pakete</div>
+        <h2 class="section-title" data-i18n="section_pricing">Pricing</h2>
+        <p class="section-subtitle" data-i18n="section_pricing_sub">Wählen Sie den passenden Tarif für Ihre Anforderungen.</p>
       </div>
 
       <div class="pricing-grid">
@@ -1480,8 +1485,8 @@
         <!-- Tier 1: Einzeltask -->
         <div class="pricing-card">
           <div>
-            <h3 class="pricing-tier">Einzeltask</h3>
-            <p class="pricing-tagline">Perfekt zum Testen</p>
+            <h3 class="pricing-tier" data-i18n="tier_single">Einzeltask</h3>
+            <p class="pricing-tagline" data-i18n="tier_single_sub">Perfekt zum Testen</p>
             <div class="pricing-price">€9.99 <span>pro Task</span></div>
 
             <ul class="pricing-features">
@@ -1510,8 +1515,8 @@
         <div class="pricing-card featured">
           <div class="pricing-badge">Beliebt</div>
           <div>
-            <h3 class="pricing-tier">Business Bundle</h3>
-            <p class="pricing-tagline">5 Tasks pro Monat, Priorisierter Support</p>
+            <h3 class="pricing-tier" data-i18n="tier_business">Business Bundle</h3>
+            <p class="pricing-tagline" data-i18n="tier_business_sub">5 Tasks pro Monat, Priorisierter Support</p>
             <div class="pricing-price">€49 <span>/Monat</span></div>
 
             <ul class="pricing-features">
@@ -1543,8 +1548,8 @@
         <!-- Tier 3: Enterprise -->
         <div class="pricing-card">
           <div>
-            <h3 class="pricing-tier">Enterprise</h3>
-            <p class="pricing-tagline">Unlimited Tasks, Custom Agents, API Access</p>
+            <h3 class="pricing-tier" data-i18n="tier_enterprise">Enterprise</h3>
+            <p class="pricing-tagline" data-i18n="tier_enterprise_sub">Unlimited Tasks, Custom Agents, API Access</p>
             <div class="pricing-price">€199 <span>/Monat</span></div>
 
             <ul class="pricing-features">
@@ -1968,6 +1973,168 @@
 
     window.openLegalModal = openLegalModal;
     window.closeLegalModal = closeLegalModal;
+
+// ===== LANGUAGE SYSTEM =====
+const translations = {
+  de: {
+    badge_live: "70 KI-Agenten Live",
+    hero_title: "70 KI-Agenten die Ihr Geschäft skalieren",
+    nav_services: "Services",
+    nav_pricing: "Pricing",
+    nav_how: "How it works",
+    cta_start: "Jetzt starten",
+    hero_sub: "Vom Lead bis zum Deal — vollautomatisch. Our 70 KI-Agenten arbeiten 24/7 an Ihrem Wachstum.",
+    badge_top: "Top Services",
+    section_services: "High-Impact KI-Agenten",
+    section_services_sub: "Wählen Sie aus unseren beliebtesten B2B-Agenten für €9.99 pro Task.",
+    badge_process: "Einfacher Prozess",
+    section_how: "How it works",
+    section_how_sub: "Drei Schritte zu Ihrem perfekten KI-Ergebnis.",
+    step1_title: "Service wählen",
+    step1_desc: "Wählen Sie aus 70 KI-Agenten den passenden Service",
+    step1_cta: "Zu den Services →",
+    step2_title: "Bezahlen & Briefing",
+    step2_desc: "Sicher bezahlen via Stripe, Ihre Anforderungen angeben",
+    step2_cta: "Zu den Preisen →",
+    step3_title: "Ergebnis erhalten",
+    step3_desc: "KI-Agent liefert Ergebnis in unter 30 Sekunden",
+    step3_cta: "Jetzt starten →",
+    badge_pricing: "Preise & Pakete",
+    section_pricing: "Pricing",
+    section_pricing_sub: "Wählen Sie den passenden Tarif für Ihre Anforderungen.",
+    tier_single: "Einzeltask",
+    tier_single_sub: "Perfekt zum Testen",
+    tier_business: "Business Bundle",
+    tier_business_sub: "5 Tasks pro Monat, Priorisierter Support",
+    tier_enterprise: "Enterprise",
+    tier_enterprise_sub: "Unlimited Tasks, Custom Agents, API Access",
+    btn_book: "Jetzt buchen",
+    btn_choose: "Auswählen",
+    footer_rights: "<span data-i18n="footer_rights">Alle Rechte vorbehalten.</span>"
+  },
+  en: {
+    badge_live: "70 AI Agents Live",
+    hero_title: "70 AI Agents That Scale Your Business",
+    nav_services: "Services",
+    nav_pricing: "Pricing",
+    nav_how: "How it works",
+    cta_start: "Get Started",
+    hero_sub: "From lead to deal — fully automated. Our 70 AI agents work 24/7 on your growth.",
+    badge_top: "Top Services",
+    section_services: "High-Impact AI Agents",
+    section_services_sub: "Choose from our most popular B2B agents for €9.99 per task.",
+    badge_process: "Simple Process",
+    section_how: "How it works",
+    section_how_sub: "Three steps to your perfect AI result.",
+    step1_title: "Choose Service",
+    step1_desc: "Select from 70 AI agents the right service for your needs",
+    step1_cta: "To Services →",
+    step2_title: "Pay & Brief",
+    step2_desc: "Secure payment via Stripe, provide your requirements",
+    step2_cta: "To Pricing →",
+    step3_title: "Get Results",
+    step3_desc: "AI agent delivers results in under 30 seconds",
+    step3_cta: "Start Now →",
+    badge_pricing: "Pricing & Plans",
+    section_pricing: "Pricing",
+    section_pricing_sub: "Choose the right plan for your needs.",
+    tier_single: "Single Task",
+    tier_single_sub: "Perfect for testing",
+    tier_business: "Business Bundle",
+    tier_business_sub: "5 tasks per month, Priority support",
+    tier_enterprise: "Enterprise",
+    tier_enterprise_sub: "Unlimited tasks, Custom agents, API access",
+    btn_book: "Book Now",
+    btn_choose: "Choose",
+    footer_rights: "All rights reserved."
+  },
+  pt: {
+    badge_live: "70 Agentes IA Ativos",
+    hero_title: "70 Agentes IA Que Escalam o Seu Negócio",
+    nav_services: "Serviços",
+    nav_pricing: "Preços",
+    nav_how: "Como funciona",
+    cta_start: "Começar",
+    hero_sub: "Do lead ao contrato — totalmente automático. Nossos 70 agentes IA trabalham 24/7 no seu crescimento.",
+    badge_top: "Top Serviços",
+    section_services: "Agentes IA de Alto Impacto",
+    section_services_sub: "Escolha entre nossos agentes B2B mais populares por €9.99 por tarefa.",
+    badge_process: "Processo Simples",
+    section_how: "Como funciona",
+    section_how_sub: "Três passos para o seu resultado de IA perfeito.",
+    step1_title: "Escolher Serviço",
+    step1_desc: "Selecione entre 70 agentes IA o serviço certo para si",
+    step1_cta: "Para Serviços →",
+    step2_title: "Pagar e Informar",
+    step2_desc: "Pagamento seguro via Stripe, forneça os seus requisitos",
+    step2_cta: "Para Preços →",
+    step3_title: "Receber Resultados",
+    step3_desc: "Agente IA entrega resultados em menos de 30 segundos",
+    step3_cta: "Começar Agora →",
+    badge_pricing: "Preços e Planos",
+    section_pricing: "Preços",
+    section_pricing_sub: "Escolha o plano certo para as suas necessidades.",
+    tier_single: "Tarefa Única",
+    tier_single_sub: "Perfeito para testar",
+    tier_business: "Pacote Business",
+    tier_business_sub: "5 tarefas por mês, Suporte prioritário",
+    tier_enterprise: "Enterprise",
+    tier_enterprise_sub: "Tarefas ilimitadas, Agentes personalizados, Acesso API",
+    btn_book: "Reservar",
+    btn_choose: "Escolher",
+    footer_rights: "Todos os direitos reservados."
+  }
+};
+
+let currentLang = 'de';
+
+function setLang(lang) {
+  currentLang = lang;
+  document.documentElement.lang = lang;
+  // Update buttons
+  ['de','en','pt'].forEach(l => {
+    const btn = document.getElementById('lang-'+l);
+    if (l === lang) {
+      btn.style.background = 'rgba(78,168,255,0.15)';
+      btn.style.border = '1px solid rgba(78,168,255,0.3)';
+      btn.style.color = '#4ea8ff';
+    } else {
+      btn.style.background = 'transparent';
+      btn.style.border = '1px solid rgba(255,255,255,0.1)';
+      btn.style.color = '#888';
+    }
+  });
+  // Translate elements with data-i18n
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (translations[lang] && translations[lang][key]) {
+      el.textContent = translations[lang][key];
+    }
+  });
+  // Translate elements with data-i18n-html (for HTML content)
+  document.querySelectorAll('[data-i18n-html]').forEach(el => {
+    const key = el.getAttribute('data-i18n-html');
+    if (translations[lang] && translations[lang][key]) {
+      el.innerHTML = translations[lang][key];
+    }
+  });
+  // Translate placeholder text
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const key = el.getAttribute('data-i18n-placeholder');
+    if (translations[lang] && translations[lang][key]) {
+      el.placeholder = translations[lang][key];
+    }
+  });
+  // Save preference
+  try { localStorage.setItem('rar_lang', lang); } catch(e) {}
+}
+
+// Load saved language on start
+try {
+  const saved = localStorage.getItem('rar_lang');
+  if (saved && translations[saved]) { setLang(saved); }
+} catch(e) {}
+
   </script>
 </body>
 </html>
