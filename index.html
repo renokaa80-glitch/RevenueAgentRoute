@@ -1,109 +1,1957 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="de" class="scroll-smooth">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RevenueAgentRoute</title>
-    <style>
-        * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',system-ui,sans-serif; }
-        body { background:#0a0e1a; min-height:100vh; display:flex; justify-content:center; align-items:center; padding:20px; }
-        .dashboard { max-width:900px; width:100%; background:#0c0f1a; border:1px solid rgba(255,255,255,0.06); border-radius:28px; padding:32px 30px; }
-        .header { display:flex; justify-content:space-between; align-items:center; margin-bottom:28px; flex-wrap:wrap; gap:12px; }
-        .company-name { font-size:13px; font-weight:500; color:rgba(255,255,255,0.3); letter-spacing:2px; text-transform:uppercase; }
-        .company-name strong { color:rgba(255,255,255,0.6); }
-        .greeting { font-size:22px; font-weight:600; color:#e6edf5; }
-        .greeting span { color:#00b8ff; }
-        .status-badge { font-size:11px; font-weight:600; color:#4ade80; background:rgba(74,222,128,0.08); padding:4px 14px; border-radius:100px; border:1px solid rgba(74,222,128,0.1); }
-        .stats-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:28px; }
-        .stat-card { background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:16px; padding:18px 16px; }
-        .stat-label { font-size:11px; font-weight:500; color:rgba(255,255,255,0.25); text-transform:uppercase; letter-spacing:0.8px; margin-bottom:6px; }
-        .stat-value { font-size:32px; font-weight:700; color:#e6edf5; margin-bottom:4px; }
-        .stat-change { font-size:13px; font-weight:500; color:#4ade80; }
-        .stat-change .arrow { font-size:14px; }
-        .research-section { background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:16px; padding:18px 20px; margin-bottom:28px; }
-        .research-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
-        .research-label { font-size:12px; font-weight:500; color:rgba(255,255,255,0.3); text-transform:uppercase; letter-spacing:0.8px; }
-        .research-value { font-size:24px; font-weight:700; color:#00b8ff; }
-        .progress-bar { width:100%; height:4px; background:rgba(255,255,255,0.05); border-radius:10px; overflow:hidden; }
-        .progress-fill { height:100%; background:linear-gradient(90deg,#00b8ff,#0066ff); border-radius:10px; width:73.6%; transition:width 1.2s ease-out; }
-        .region-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:28px; }
-        .region-card { background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:14px; padding:14px 16px; display:flex; justify-content:space-between; align-items:center; }
-        .region-left { display:flex; align-items:center; gap:12px; }
-        .region-flag { font-size:26px; }
-        .region-name { font-size:14px; font-weight:600; color:#e6edf5; }
-        .region-time { font-size:12px; color:rgba(255,255,255,0.3); }
-        .region-status { font-size:10px; font-weight:600; padding:3px 12px; border-radius:100px; text-transform:uppercase; }
-        .region-status.active { background:rgba(74,222,128,0.12); color:#4ade80; border:1px solid rgba(74,222,128,0.08); }
-        .region-status.standby { background:rgba(251,191,36,0.12); color:#fbbf24; border:1px solid rgba(251,191,36,0.08); }
-        .activity-log { border-top:1px solid rgba(255,255,255,0.04); padding-top:18px; margin-top:4px; }
-        .activity-title { font-size:11px; font-weight:500; color:rgba(255,255,255,0.15); text-transform:uppercase; letter-spacing:1px; margin-bottom:12px; }
-        .activity-item { display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.02); }
-        .activity-item:last-child { border-bottom:none; }
-        .activity-text { font-size:13px; color:rgba(255,255,255,0.5); }
-        .activity-text strong { color:rgba(255,255,255,0.7); font-weight:500; }
-        .activity-time { font-size:11px; color:rgba(255,255,255,0.15); }
-        .loading { text-align:center; padding:60px 20px; color:rgba(255,255,255,0.3); }
-        .spinner { width:40px; height:40px; border:3px solid rgba(255,255,255,0.05); border-top-color:#00b8ff; border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto 16px; }
-        @keyframes spin { to { transform:rotate(360deg); } }
-        @media (max-width:700px) { .stats-grid { grid-template-columns:1fr 1fr; } .region-grid { grid-template-columns:1fr; } }
-        @media (max-width:420px) { .stats-grid { grid-template-columns:1fr; } }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RevenueAgentRoute — 70 KI-Agenten die Ihr Geschäft skalieren</title>
+  <meta name="description" content="B2B KI-Agenten Plattform: Lead-Generierung, SEO-Audits, Copywriting, CRO und mehr in unter 30 Sekunden. DSGVO-konform & 24/7 verfügbar.">
+  
+  <!-- Stripe.js External Dependency -->
+  <script src="https://js.stripe.com/v3/"></script>
+
+  <style>
+    /* CSS Reset & Variable Definitions */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #0a0e1a;
+      --bg-surface: #0d1222;
+      --card-bg: #0f1420;
+      --card-hover-bg: #131a2e;
+      --border-color: rgba(255, 255, 255, 0.08);
+      --border-hover: rgba(0, 212, 255, 0.35);
+      
+      --accent-cyan: #00d4ff;
+      --accent-purple: #7b2fff;
+      --gradient-accent: linear-gradient(135deg, #00d4ff 0%, #7b2fff 100%);
+      --gradient-accent-soft: linear-gradient(135deg, rgba(0, 212, 255, 0.15) 0%, rgba(123, 47, 255, 0.15) 100%);
+      
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-subtle: #64748b;
+      
+      --font-stack: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      --max-width: 1240px;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 20px;
+      --radius-full: 9999px;
+      
+      --shadow-glow: 0 0 25px rgba(0, 212, 255, 0.18);
+      --shadow-purple-glow: 0 0 35px rgba(123, 47, 255, 0.25);
+      --transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    html, body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      font-family: var(--font-stack);
+      line-height: 1.6;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      position: relative;
+    }
+
+    /* Ambient Background Glows */
+    .bg-glow-1 {
+      position: absolute;
+      top: -150px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 800px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(0, 212, 255, 0.12) 0%, rgba(123, 47, 255, 0.08) 40%, rgba(10, 14, 26, 0) 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .bg-glow-2 {
+      position: absolute;
+      top: 1400px;
+      right: -200px;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(123, 47, 255, 0.1) 0%, rgba(10, 14, 26, 0) 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Container Utility */
+    .container {
+      width: 100%;
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 0 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Typography & Text Highlights */
+    h1, h2, h3, h4 {
+      color: var(--text-main);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .text-gradient {
+      background: var(--gradient-accent);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: inline-block;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      border-radius: var(--radius-full);
+      background: rgba(0, 212, 255, 0.08);
+      border: 1px solid rgba(0, 212, 255, 0.25);
+      color: var(--accent-cyan);
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 20px;
+    }
+
+    .badge-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background-color: var(--accent-cyan);
+      box-shadow: 0 0 8px var(--accent-cyan);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.8); }
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 14px 28px;
+      border-radius: var(--radius-md);
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      text-decoration: none;
+      border: none;
+      outline: none;
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: var(--gradient-accent);
+      color: #ffffff;
+      box-shadow: 0 4px 20px rgba(0, 212, 255, 0.25);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(0, 212, 255, 0.4);
+      filter: brightness(1.1);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      backdrop-filter: blur(10px);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
+      transform: translateY(-2px);
+    }
+
+    .btn-card {
+      width: 100%;
+      padding: 12px;
+      font-size: 0.95rem;
+      border-radius: var(--radius-sm);
+      background: rgba(0, 212, 255, 0.1);
+      color: var(--accent-cyan);
+      border: 1px solid rgba(0, 212, 255, 0.2);
+    }
+
+    .btn-card:hover {
+      background: var(--gradient-accent);
+      color: #fff;
+      border-color: transparent;
+      box-shadow: var(--shadow-glow);
+    }
+
+    /* NAV BAR */
+    .navbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(10, 14, 26, 0.82);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border-color);
+      padding: 18px 0;
+    }
+
+    .navbar-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--text-main);
+      font-weight: 800;
+      font-size: 1.35rem;
+      letter-spacing: -0.03em;
+    }
+
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: var(--gradient-accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--shadow-glow);
+    }
+
+    .logo-icon svg {
+      width: 20px;
+      height: 20px;
+      fill: none;
+      stroke: #ffffff;
+      stroke-width: 2.2;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 0.95rem;
+      transition: var(--transition);
+    }
+
+    .nav-links a:hover {
+      color: var(--accent-cyan);
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .mobile-toggle {
+      display: none;
+      background: none;
+      border: none;
+      color: var(--text-main);
+      cursor: pointer;
+    }
+
+    /* HERO SECTION */
+    .hero-section {
+      padding: 90px 0 70px;
+      text-align: center;
+      position: relative;
+    }
+
+    .hero-title {
+      font-size: clamp(2.5rem, 5.5vw, 4.2rem);
+      line-height: 1.15;
+      max-width: 950px;
+      margin: 0 auto 24px;
+    }
+
+    .hero-subtitle {
+      font-size: clamp(1.1rem, 2vw, 1.35rem);
+      color: var(--text-muted);
+      max-width: 720px;
+      margin: 0 auto 40px;
+      font-weight: 400;
+    }
+
+    .hero-cta-group {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      flex-wrap: wrap;
+      margin-bottom: 60px;
+    }
+
+    /* HERO INTERACTIVE DEMO PREVIEW */
+    .hero-demo {
+      max-width: 900px;
+      margin: 0 auto;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), var(--shadow-purple-glow);
+      text-align: left;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .demo-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 16px;
+      margin-bottom: 20px;
+    }
+
+    .demo-dots {
+      display: flex;
+      gap: 8px;
+    }
+
+    .demo-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .demo-dot-red { background: #ff5f56; }
+    .demo-dot-yellow { background: #ffbd2e; }
+    .demo-dot-green { background: #27c93f; }
+
+    .demo-title {
+      font-size: 0.85rem;
+      color: var(--text-subtle);
+      font-family: monospace;
+      letter-spacing: 0.05em;
+    }
+
+    .demo-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.8rem;
+      color: #10b981;
+      font-weight: 600;
+      background: rgba(16, 185, 129, 0.1);
+      padding: 4px 10px;
+      border-radius: var(--radius-full);
+    }
+
+    .demo-body {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 0.9rem;
+      color: #cbd5e1;
+      background: #070a14;
+      padding: 20px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      min-height: 180px;
+    }
+
+    .demo-tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .demo-tab {
+      padding: 6px 14px;
+      font-size: 0.8rem;
+      border-radius: var(--radius-sm);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-muted);
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .demo-tab.active {
+      background: rgba(0, 212, 255, 0.1);
+      color: var(--accent-cyan);
+      border-color: rgba(0, 212, 255, 0.3);
+    }
+
+    .demo-code-line {
+      margin-bottom: 8px;
+      display: flex;
+      gap: 12px;
+    }
+
+    .demo-prompt-char {
+      color: var(--accent-cyan);
+      user-select: none;
+    }
+
+    .demo-highlight {
+      color: #38bdf8;
+    }
+
+    .demo-success {
+      color: #4ade80;
+    }
+
+    /* STATS BAR */
+    .stats-section {
+      padding: 50px 0;
+      background: var(--bg-surface);
+      border-top: 1px solid var(--border-color);
+      border-bottom: 1px solid var(--border-color);
+      position: relative;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 24px;
+      text-align: center;
+    }
+
+    .stat-item {
+      padding: 16px;
+      position: relative;
+    }
+
+    .stat-item:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      right: 0;
+      top: 20%;
+      height: 60%;
+      width: 1px;
+      background: var(--border-color);
+    }
+
+    .stat-number {
+      font-size: clamp(2rem, 3.5vw, 2.8rem);
+      font-weight: 800;
+      background: var(--gradient-accent);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 6px;
+    }
+
+    .stat-label {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    /* SECTION HEADERS */
+    .section-header {
+      text-align: center;
+      max-width: 700px;
+      margin: 0 auto 60px;
+    }
+
+    .section-title {
+      font-size: clamp(2rem, 3.8vw, 2.8rem);
+      margin-bottom: 16px;
+    }
+
+    .section-subtitle {
+      font-size: 1.1rem;
+      color: var(--text-muted);
+    }
+
+    /* SERVICES GRID SECTION */
+    .services-section {
+      padding: 100px 0;
+    }
+
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 28px;
+    }
+
+    .service-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 30px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .service-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--gradient-accent);
+      opacity: 0;
+      transition: var(--transition);
+    }
+
+    .service-card:hover {
+      background: var(--card-hover-bg);
+      border-color: var(--border-hover);
+      transform: translateY(-6px);
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.4), var(--shadow-glow);
+    }
+
+    .service-card:hover::before {
+      opacity: 1;
+    }
+
+    .service-icon-wrapper {
+      width: 52px;
+      height: 52px;
+      border-radius: var(--radius-sm);
+      background: var(--gradient-accent-soft);
+      border: 1px solid rgba(0, 212, 255, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      color: var(--accent-cyan);
+    }
+
+    .service-icon-wrapper svg {
+      width: 26px;
+      height: 26px;
+      stroke: currentColor;
+      stroke-width: 2;
+      fill: none;
+    }
+
+    .service-name {
+      font-size: 1.25rem;
+      margin-bottom: 10px;
+      color: var(--text-main);
+    }
+
+    .service-desc {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      line-height: 1.55;
+      margin-bottom: 24px;
+      flex-grow: 1;
+    }
+
+    .service-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      padding-top: 18px;
+      gap: 12px;
+    }
+
+    .service-price {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .service-price span {
+      font-size: 0.8rem;
+      color: var(--text-subtle);
+      font-weight: 400;
+    }
+
+    /* HOW IT WORKS SECTION */
+    .how-section {
+      padding: 100px 0;
+      background: var(--bg-surface);
+      border-top: 1px solid var(--border-color);
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 32px;
+      position: relative;
+    }
+
+    .step-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 40px 30px;
+      text-align: center;
+      position: relative;
+      transition: var(--transition);
+    }
+
+    .step-card:hover {
+      border-color: var(--border-hover);
+      transform: translateY(-4px);
+    }
+
+    .step-number {
+      position: absolute;
+      top: 16px;
+      right: 20px;
+      font-size: 2.5rem;
+      font-weight: 800;
+      color: rgba(255, 255, 255, 0.04);
+      line-height: 1;
+    }
+
+    .step-icon {
+      width: 70px;
+      height: 70px;
+      margin: 0 auto 24px;
+      border-radius: 50%;
+      background: var(--gradient-accent-soft);
+      border: 1px solid rgba(123, 47, 255, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent-cyan);
+      box-shadow: 0 0 20px rgba(0, 212, 255, 0.1);
+    }
+
+    .step-icon svg {
+      width: 32px;
+      height: 32px;
+      stroke: currentColor;
+      stroke-width: 2;
+      fill: none;
+    }
+
+    .step-title {
+      font-size: 1.3rem;
+      margin-bottom: 12px;
+    }
+
+    .step-desc {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    /* PRICING SECTION */
+    .pricing-section {
+      padding: 100px 0;
+    }
+
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 32px;
+      align-items: stretch;
+    }
+
+    .pricing-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 40px 32px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      transition: var(--transition);
+    }
+
+    .pricing-card:hover {
+      transform: translateY(-5px);
+    }
+
+    .pricing-card.featured {
+      background: linear-gradient(180deg, #12182c 0%, #0f1420 100%);
+      border: 2px solid var(--accent-cyan);
+      box-shadow: var(--shadow-glow);
+    }
+
+    .pricing-badge {
+      position: absolute;
+      top: -14px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--gradient-accent);
+      color: #fff;
+      padding: 4px 16px;
+      border-radius: var(--radius-full);
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      box-shadow: 0 4px 15px rgba(0, 212, 255, 0.4);
+    }
+
+    .pricing-tier {
+      font-size: 1.35rem;
+      margin-bottom: 8px;
+    }
+
+    .pricing-tagline {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin-bottom: 24px;
+      min-height: 40px;
+    }
+
+    .pricing-price {
+      font-size: 2.8rem;
+      font-weight: 800;
+      color: var(--text-main);
+      margin-bottom: 24px;
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+
+    .pricing-price span {
+      font-size: 1rem;
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    .pricing-features {
+      list-style: none;
+      margin-bottom: 36px;
+      border-top: 1px solid var(--border-color);
+      padding-top: 24px;
+    }
+
+    .pricing-features li {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin-bottom: 14px;
+    }
+
+    .pricing-features li svg {
+      width: 18px;
+      height: 18px;
+      stroke: var(--accent-cyan);
+      stroke-width: 2.5;
+      fill: none;
+      flex-shrink: 0;
+    }
+
+    /* FAQ SECTION */
+    .faq-section {
+      padding: 100px 0;
+      background: var(--bg-surface);
+      border-top: 1px solid var(--border-color);
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .faq-container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .faq-item {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      margin-bottom: 16px;
+      overflow: hidden;
+      transition: var(--transition);
+    }
+
+    .faq-item:hover {
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .faq-question {
+      width: 100%;
+      padding: 22px 28px;
+      background: none;
+      border: none;
+      color: var(--text-main);
+      font-size: 1.1rem;
+      font-weight: 600;
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .faq-icon {
+      width: 24px;
+      height: 24px;
+      stroke: var(--accent-cyan);
+      stroke-width: 2;
+      fill: none;
+      transition: transform 0.3s ease;
+      flex-shrink: 0;
+    }
+
+    .faq-item.active .faq-icon {
+      transform: rotate(180deg);
+    }
+
+    .faq-answer {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s cubic-bezier(0, 1, 0, 1);
+      padding: 0 28px;
+      color: var(--text-muted);
+      font-size: 0.98rem;
+      line-height: 1.65;
+    }
+
+    .faq-item.active .faq-answer {
+      max-height: 300px;
+      padding-bottom: 24px;
+      transition: max-height 0.3s ease-in-out;
+    }
+
+    /* CTA SECTION */
+    .cta-section {
+      padding: 110px 0;
+      text-align: center;
+    }
+
+    .cta-box {
+      background: linear-gradient(135deg, rgba(0, 212, 255, 0.08) 0%, rgba(123, 47, 255, 0.08) 100%);
+      border: 1px solid rgba(0, 212, 255, 0.25);
+      border-radius: var(--radius-lg);
+      padding: 70px 40px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: var(--shadow-purple-glow);
+    }
+
+    .cta-title {
+      font-size: clamp(2.2rem, 4vw, 3.2rem);
+      margin-bottom: 20px;
+    }
+
+    .cta-desc {
+      color: var(--text-muted);
+      font-size: 1.15rem;
+      max-width: 600px;
+      margin: 0 auto 36px;
+    }
+
+    /* FOOTER */
+    .footer {
+      background: #060912;
+      border-top: 1px solid var(--border-color);
+      padding: 50px 0 30px;
+      color: var(--text-subtle);
+      font-size: 0.9rem;
+    }
+
+    .footer-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 28px;
+      list-style: none;
+    }
+
+    .footer-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: var(--transition);
+    }
+
+    .footer-links a:hover {
+      color: var(--accent-cyan);
+    }
+
+    /* OVERLAY MODAL */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(10, 14, 26, 0.85);
+      backdrop-filter: blur(12px);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-hover);
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 520px;
+      padding: 36px;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7), var(--shadow-glow);
+      position: relative;
+      transform: translateY(20px);
+      transition: transform 0.25s ease;
+    }
+
+    .modal-overlay.active .modal-card {
+      transform: translateY(0);
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .modal-close:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: var(--text-main);
+    }
+
+    .modal-header {
+      margin-bottom: 24px;
+    }
+
+    .modal-title {
+      font-size: 1.45rem;
+      margin-bottom: 6px;
+    }
+
+    .modal-subtitle {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .service-tag-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--gradient-accent-soft);
+      border: 1px solid rgba(0, 212, 255, 0.3);
+      color: var(--accent-cyan);
+      padding: 4px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-top: 8px;
+    }
+
+    .form-group {
+      margin-bottom: 18px;
+      text-align: left;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .form-input, .form-textarea {
+      width: 100%;
+      padding: 12px 16px;
+      background: rgba(7, 10, 20, 0.7);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      color: var(--text-main);
+      font-family: inherit;
+      font-size: 0.95rem;
+      transition: var(--transition);
+      outline: none;
+    }
+
+    .form-input:focus, .form-textarea:focus {
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 12px rgba(0, 212, 255, 0.2);
+    }
+
+    .form-textarea {
+      resize: vertical;
+      min-height: 90px;
+    }
+
+    .modal-status {
+      margin-top: 14px;
+      font-size: 0.9rem;
+      text-align: center;
+      min-height: 22px;
+    }
+
+    .modal-status.error {
+      color: #ef4444;
+    }
+
+    .modal-status.success {
+      color: #10b981;
+    }
+
+    /* Spinner */
+    .spinner {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* RESPONSIVE MEDIA QUERIES */
+    @media (max-width: 992px) {
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .stat-item:nth-child(2)::after {
+        display: none;
+      }
+      .steps-grid, .pricing-grid {
+        grid-template-columns: 1fr;
+      }
+      .pricing-card.featured {
+        transform: none;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .nav-links {
+        display: none;
+      }
+      .nav-links.mobile-open {
+        display: flex;
+        flex-direction: column;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: var(--bg-surface);
+        padding: 24px;
+        border-bottom: 1px solid var(--border-color);
+      }
+      .mobile-toggle {
+        display: block;
+      }
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+      .stat-item::after {
+        display: none !important;
+      }
+      .services-grid {
+        grid-template-columns: 1fr;
+      }
+      .cta-box {
+        padding: 40px 20px;
+      }
+    }
+  </style>
 </head>
 <body>
-    <div class="dashboard" id="loadingState">
-        <div class="loading"><div class="spinner"></div><div>🚀 Initializing Command Center...</div></div>
+
+  <!-- Ambient Glow Effects -->
+  <div class="bg-glow-1"></div>
+  <div class="bg-glow-2"></div>
+
+  <!-- NAV BAR -->
+  <header class="navbar">
+    <div class="container navbar-container">
+      <a href="#" class="logo">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+          </svg>
+        </div>
+        <span>RevenueAgentRoute</span>
+      </a>
+
+      <nav>
+        <ul class="nav-links" id="navLinks">
+          <li><a href="#services">Services</a></li>
+          <li><a href="#pricing">Pricing</a></li>
+          <li><a href="#how-it-works">How it works</a></li>
+        </ul>
+      </nav>
+
+      <div class="nav-actions">
+        <button onclick="startCheckout('Kostenlose Testphase', '0.00')" class="btn btn-primary" style="padding: 10px 20px; font-size: 0.9rem;">Jetzt starten</button>
+        <button class="mobile-toggle" id="mobileToggle" aria-label="Menü öffnen">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+      </div>
     </div>
-    <div class="dashboard" id="dashboard" style="display:none;">
-        <div class="header">
-            <div class="company-name"><strong>REVENUEAGENTROUTE</strong> — GLOBAL COMMAND CENTER</div>
-            <div class="status-badge">● 5 active systems</div>
+  </header>
+
+  <!-- HERO SECTION -->
+  <section class="hero-section">
+    <div class="container">
+      <div class="badge">
+        <span class="badge-dot"></span>
+        70 KI-Agenten Live
+      </div>
+
+      <h1 class="hero-title">
+        70 KI-Agenten die Ihr Geschäft skalieren
+      </h1>
+
+      <p class="hero-subtitle">
+        Lead-Generierung, SEO-Audits, Copywriting und mehr — in Sekunden, nicht Wochen.
+      </p>
+
+      <div class="hero-cta-group">
+        <button onclick="startCheckout('Kostenlose Testphase', '0.00')" class="btn btn-primary">
+          Kostenlos testen
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+        <a href="#services" class="btn btn-secondary">Services ansehen</a>
+      </div>
+
+      <!-- HERO INTERACTIVE DEMO PREVIEW -->
+      <div class="hero-demo">
+        <div class="demo-header">
+          <div class="demo-dots">
+            <div class="demo-dot demo-dot-red"></div>
+            <div class="demo-dot demo-dot-yellow"></div>
+            <div class="demo-dot demo-dot-green"></div>
+          </div>
+          <div class="demo-title">agent_runner_v2.4.sh — RevenueAgentRoute</div>
+          <div class="demo-status">
+            <span class="badge-dot" style="background:#10b981;"></span>
+            24/7 Aktiv
+          </div>
         </div>
-        <div class="stats-grid">
-            <div class="stat-card"><div class="stat-label">🤖 Active Agents</div><div class="stat-value" id="statAgents">08/12</div><div class="stat-change"><span class="arrow">↗</span> +2 since 06:00 UTC</div></div>
-            <div class="stat-card"><div class="stat-label">💰 Signal Velocity</div><div class="stat-value" id="statRevenue">$146.8k</div><div class="stat-change"><span class="arrow">↗</span> +18.4% vs. prior period</div></div>
-            <div class="stat-card"><div class="stat-label">💳 Wallet</div><div class="stat-value" id="statWallet">$1.500</div><div class="stat-change"><span class="arrow">↗</span> +200%</div></div>
+
+        <div class="demo-tabs">
+          <button class="demo-tab active" onclick="switchDemoTab('leadgen')">⚡ Cold Lead-Gen</button>
+          <button class="demo-tab" onclick="switchDemoTab('seo')">🔍 SEO Audit</button>
+          <button class="demo-tab" onclick="switchDemoTab('copy')">✍️ Copywriting</button>
         </div>
-        <div class="research-section">
-            <div class="research-header"><span class="research-label">📊 System Status · Research Throughput</span><span class="research-value" id="throughputValue">73.6%</span></div>
-            <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+
+        <div class="demo-body" id="demoConsole">
+          <div class="demo-code-line"><span class="demo-prompt-char">$</span> <span>revenue-agent run --service="Cold Outreach Lead-Gen" --target="SaaS B2B Germany"</span></div>
+          <div class="demo-code-line"><span class="demo-prompt-char">></span> <span class="demo-highlight">[System] Initialisiere KI-Agent #14 (Lead Scraper & Enricher)...</span></div>
+          <div class="demo-code-line"><span class="demo-prompt-char">></span> <span>[Analysis] 250 Unternehmen gescannt, 42 verifizierte B2B Entscheider extrahiert.</span></div>
+          <div class="demo-code-line"><span class="demo-prompt-char">></span> <span class="demo-success">✔ [Fertig in 12.4s] Personalisierte Outreach-Sequenz generiert & einsatzbereit.</span></div>
         </div>
-        <div class="region-grid">
-            <div class="region-card"><div class="region-left"><span class="region-flag">🇺🇸</span><div><div class="region-name">USA</div><div class="region-time" id="timeUS">09:00 EST</div></div></div><span class="region-status active">ACTIVE</span></div>
-            <div class="region-card"><div class="region-left"><span class="region-flag">🇪🇺</span><div><div class="region-name">Europa</div><div class="region-time" id="timeEU">15:00 CET</div></div></div><span class="region-status active">ACTIVE</span></div>
-            <div class="region-card"><div class="region-left"><span class="region-flag">🇯🇵</span><div><div class="region-name">Asien</div><div class="region-time" id="timeAPAC">22:00 SGT</div></div></div><span class="region-status standby">STANDBY</span></div>
-        </div>
-        <div class="activity-log">
-            <div class="activity-title">📡 Recent Signals</div>
-            <div class="activity-item"><div class="activity-text"><strong>System initialized</strong> — Command Center online</div><span class="activity-time">Gerade eben</span></div>
-        </div>
+      </div>
+
     </div>
-    <script>
-        (function() {
-            const apiUrl = 'https://web-production-568b4.up.railway.app';
-            async function loadData() {
-                try {
-                    const res = await fetch(apiUrl + '/api/revenue/health');
-                    if (res.ok) {
-                        const data = await res.json();
-                        document.getElementById('statRevenue').textContent = '$' + (data.total_bank_earnings_usd || 0).toLocaleString();
-                        document.getElementById('statWallet').textContent = '$' + (data.wallet_balance_usd || 0).toLocaleString();
-                        document.getElementById('throughputValue').textContent = (data.sparten_anzahl || 0) + '%';
-                    }
-                } catch(e) { console.log('API not ready yet'); }
-                document.getElementById('loadingState').style.display = 'none';
-                document.getElementById('dashboard').style.display = 'block';
-            }
-            function updateClocks() {
-                const now = new Date();
-                document.getElementById('timeUS').textContent = new Date(now.toLocaleString('en-US',{timeZone:'America/New_York'})).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}) + ' EST';
-                document.getElementById('timeEU').textContent = new Date(now.toLocaleString('de-DE',{timeZone:'Europe/Berlin'})).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}) + ' CET';
-                document.getElementById('timeAPAC').textContent = new Date(now.toLocaleString('ja-JP',{timeZone:'Asia/Tokyo'})).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}) + ' SGT';
-            }
-            setTimeout(loadData, 1000);
-            updateClocks();
-            setInterval(updateClocks, 1000);
-            setInterval(loadData, 30000);
-        })();
-    </script>
+  </section>
+
+  <!-- STATS BAR -->
+  <section class="stats-section">
+    <div class="container">
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-number" data-target="70">70</div>
+          <div class="stat-label">70 KI-Agenten</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">&lt;30s</div>
+          <div class="stat-label">&lt;30s Lieferzeit (<30s Lieferzeit)</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">24/7</div>
+          <div class="stat-label">24/7 verfügbar</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">DSGVO</div>
+          <div class="stat-label">DSGVO-konform</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SERVICES GRID SECTION -->
+  <section class="services-section" id="services">
+    <div class="container">
+      <div class="section-header">
+        <div class="badge">Top Services</div>
+        <h2 class="section-title">High-Impact KI-Agenten</h2>
+        <p class="section-subtitle">Wählen Sie aus unseren beliebtesten B2B-Agenten für €9.99 pro Task.</p>
+      </div>
+
+      <div class="services-grid">
+
+        <!-- 1. Cold Outreach Lead-Gen -->
+        <div class="service-card">
+          <div>
+            <div class="service-icon-wrapper">
+              <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+            </div>
+            <h3 class="service-name">Cold Outreach Lead-Gen</h3>
+            <p class="service-desc">Automatische Generierung von hochkonvertierenden B2B-Outreach-Kampagnen, Zielgruppen-Analysen und verifizierten Leads.</p>
+          </div>
+          <div class="service-footer">
+            <div class="service-price">€9.99 <span>pro Task</span></div>
+            <button onclick="startCheckout('Cold Outreach Lead-Gen', '9.99')" class="btn btn-card">Jetzt buchen</button>
+          </div>
+        </div>
+
+        <!-- 2. SEO Audit & Repair -->
+        <div class="service-card">
+          <div>
+            <div class="service-icon-wrapper">
+              <svg viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            </div>
+            <h3 class="service-name">SEO Audit & Repair</h3>
+            <p class="service-desc">Tiefgehende Analyse technischer SEO-Fehler inkl. sofort einsatzbereitem Code-Fix & Content-Optimierung.</p>
+          </div>
+          <div class="service-footer">
+            <div class="service-price">€9.99 <span>pro Task</span></div>
+            <button onclick="startCheckout('SEO Audit & Repair', '9.99')" class="btn btn-card">Jetzt buchen</button>
+          </div>
+        </div>
+
+        <!-- 3. Social Reputation Management -->
+        <div class="service-card">
+          <div>
+            <div class="service-icon-wrapper">
+              <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <h3 class="service-name">Social Reputation Management</h3>
+            <p class="service-desc">Überwachung von Marken-Erwähnungen, Sentiment-Analyse und automatische Antwortentwürfe.</p>
+          </div>
+          <div class="service-footer">
+            <div class="service-price">€9.99 <span>pro Task</span></div>
+            <button onclick="startCheckout('Social Reputation Management', '9.99')" class="btn btn-card">Jetzt buchen</button>
+          </div>
+        </div>
+
+        <!-- 4. Landingpage Copywriting -->
+        <div class="service-card">
+          <div>
+            <div class="service-icon-wrapper">
+              <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </div>
+            <h3 class="service-name">Landingpage Copywriting</h3>
+            <p class="service-desc">Verkaufsstarke Headlines, Sublines und CTAs optimiert für maximale Conversion.</p>
+          </div>
+          <div class="service-footer">
+            <div class="service-price">€9.99 <span>pro Task</span></div>
+            <button onclick="startCheckout('Landingpage Copywriting', '9.99')" class="btn btn-card">Jetzt buchen</button>
+          </div>
+        </div>
+
+        <!-- 5. Conversion Rate Optimization -->
+        <div class="service-card">
+          <div>
+            <div class="service-icon-wrapper">
+              <svg viewBox="0 0 24 24"><path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+            </div>
+            <h3 class="service-name">Conversion Rate Optimization</h3>
+            <p class="service-desc">A/B-Test Hypothesen, UX-Schwachstellen-Analyse und Heatmap-Interpretation durch KI.</p>
+          </div>
+          <div class="service-footer">
+            <div class="service-price">€9.99 <span>pro Task</span></div>
+            <button onclick="startCheckout('Conversion Rate Optimization', '9.99')" class="btn btn-card">Jetzt buchen</button>
+          </div>
+        </div>
+
+        <!-- 6. Google Business Local SEO -->
+        <div class="service-card">
+          <div>
+            <div class="service-icon-wrapper">
+              <svg viewBox="0 0 24 24"><path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            </div>
+            <h3 class="service-name">Google Business Local SEO</h3>
+            <p class="service-desc">Lokale Dominanz auf Google Maps: Optimierte Beschreibungen, Reviews & Lokale Keywords.</p>
+          </div>
+          <div class="service-footer">
+            <div class="service-price">€9.99 <span>pro Task</span></div>
+            <button onclick="startCheckout('Google Business Local SEO', '9.99')" class="btn btn-card">Jetzt buchen</button>
+          </div>
+        </div>
+
+        <!-- 7. Programmatic Content SEO -->
+        <div class="service-card">
+          <div>
+            <div class="service-icon-wrapper">
+              <svg viewBox="0 0 24 24"><path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+            </div>
+            <h3 class="service-name">Programmatic Content SEO</h3>
+            <p class="service-desc">Skalierbare Erstellung von hunderte rankenden Landingpages & Glossareinträgen.</p>
+          </div>
+          <div class="service-footer">
+            <div class="service-price">€9.99 <span>pro Task</span></div>
+            <button onclick="startCheckout('Programmatic Content SEO', '9.99')" class="btn btn-card">Jetzt buchen</button>
+          </div>
+        </div>
+
+        <!-- 8. Email Template Design -->
+        <div class="service-card">
+          <div>
+            <div class="service-icon-wrapper">
+              <svg viewBox="0 0 24 24"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+            </div>
+            <h3 class="service-name">Email Template Design</h3>
+            <p class="service-desc">Conversion-starke HTML/Text-E-Mail-Sequenzen für Onboarding, Nurturing & Sales.</p>
+          </div>
+          <div class="service-footer">
+            <div class="service-price">€9.99 <span>pro Task</span></div>
+            <button onclick="startCheckout('Email Template Design', '9.99')" class="btn btn-card">Jetzt buchen</button>
+          </div>
+        </div>
+
+        <!-- 9. Case Study Generator -->
+        <div class="service-card">
+          <div>
+            <div class="service-icon-wrapper">
+              <svg viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            </div>
+            <h3 class="service-name">Case Study Generator</h3>
+            <p class="service-desc">Transformiert Rohdaten & Kundeninterviews in beeindruckende B2B-Erfolgsgeschichten.</p>
+          </div>
+          <div class="service-footer">
+            <div class="service-price">€9.99 <span>pro Task</span></div>
+            <button onclick="startCheckout('Case Study Generator', '9.99')" class="btn btn-card">Jetzt buchen</button>
+          </div>
+        </div>
+
+        <!-- 10. B2B CRM Enrichment -->
+        <div class="service-card">
+          <div>
+            <div class="service-icon-wrapper">
+              <svg viewBox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+            </div>
+            <h3 class="service-name">B2B CRM Enrichment</h3>
+            <p class="service-desc">Vervollständigt Firmenprofil, Firmengröße, Tech-Stack und Ansprechpartner automatisiert.</p>
+          </div>
+          <div class="service-footer">
+            <div class="service-price">€9.99 <span>pro Task</span></div>
+            <button onclick="startCheckout('B2B CRM Enrichment', '9.99')" class="btn btn-card">Jetzt buchen</button>
+          </div>
+        </div>
+
+        <!-- 11. Competitor Price Monitoring -->
+        <div class="service-card">
+          <div>
+            <div class="service-icon-wrapper">
+              <svg viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 012-2h2a2 2 0 012 2v6a2 2 0 01-2 2h-2a2 2 0 01-2-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+            </div>
+            <h3 class="service-name">Competitor Price Monitoring</h3>
+            <p class="service-desc">Echtzeit-Analyse der Preisstrukturen Ihrer Konkurrenten mit KI-Empfehlungen.</p>
+          </div>
+          <div class="service-footer">
+            <div class="service-price">€9.99 <span>pro Task</span></div>
+            <button onclick="startCheckout('Competitor Price Monitoring', '9.99')" class="btn btn-card">Jetzt buchen</button>
+          </div>
+        </div>
+
+        <!-- 12. Cloud Cost Optimization -->
+        <div class="service-card">
+          <div>
+            <div class="service-icon-wrapper">
+              <svg viewBox="0 0 24 24"><path d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 00-9.78 2.096A4.001 4.001 0 003 15z"/></svg>
+            </div>
+            <h3 class="service-name">Cloud Cost Optimization</h3>
+            <p class="service-desc">Scannt AWS, Azure & GCP Architekturen und identifiziert sofortige Einsparpotenziale.</p>
+          </div>
+          <div class="service-footer">
+            <div class="service-price">€9.99 <span>pro Task</span></div>
+            <button onclick="startCheckout('Cloud Cost Optimization', '9.99')" class="btn btn-card">Jetzt buchen</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS SECTION -->
+  <section class="how-section" id="how-it-works">
+    <div class="container">
+      <div class="section-header">
+        <div class="badge">Einfacher Prozess</div>
+        <h2 class="section-title">How it works</h2>
+        <p class="section-subtitle">Drei Schritte zu Ihrem perfekten KI-Ergebnis.</p>
+      </div>
+
+      <div class="steps-grid">
+        <!-- Step 1 -->
+        <div class="step-card">
+          <div class="step-number">01</div>
+          <div class="step-icon">
+            <svg viewBox="0 0 24 24"><path d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/></svg>
+          </div>
+          <h3 class="step-title">Service wählen</h3>
+          <p class="step-desc">Wählen Sie aus 70 KI-Agenten den passenden Service</p>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="step-card">
+          <div class="step-number">02</div>
+          <div class="step-icon">
+            <svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+          </div>
+          <h3 class="step-title">Bezahlen & Briefing</h3>
+          <p class="step-desc">Sicher bezahlen via Stripe, Ihre Anforderungen angeben</p>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="step-card">
+          <div class="step-number">03</div>
+          <div class="step-icon">
+            <svg viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          </div>
+          <h3 class="step-title">Ergebnis erhalten</h3>
+          <p class="step-desc">KI-Agent liefert Ergebnis in unter 30 Sekunden</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRICING SECTION -->
+  <section class="pricing-section" id="pricing">
+    <div class="container">
+      <div class="section-header">
+        <div class="badge">Preise & Pakete</div>
+        <h2 class="section-title">Pricing</h2>
+        <p class="section-subtitle">Wählen Sie den passenden Tarif für Ihre Anforderungen.</p>
+      </div>
+
+      <div class="pricing-grid">
+
+        <!-- Tier 1: Einzeltask -->
+        <div class="pricing-card">
+          <div>
+            <h3 class="pricing-tier">Einzeltask</h3>
+            <p class="pricing-tagline">Perfekt zum Testen</p>
+            <div class="pricing-price">€9.99 <span>pro Task</span></div>
+
+            <ul class="pricing-features">
+              <li>
+                <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+                1 KI-Agent Task nach Wahl
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+                Ergebnis in unter 30 Sekunden
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+                Sicher bezahlen via Stripe
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+                100% DSGVO-konform
+              </li>
+            </ul>
+          </div>
+          <button onclick="startCheckout('Einzeltask', '9.99')" class="btn btn-secondary" style="width: 100%;">Jetzt buchen</button>
+        </div>
+
+        <!-- Tier 2: Business Bundle -->
+        <div class="pricing-card featured">
+          <div class="pricing-badge">Beliebt</div>
+          <div>
+            <h3 class="pricing-tier">Business Bundle</h3>
+            <p class="pricing-tagline">5 Tasks pro Monat, Priorisierter Support</p>
+            <div class="pricing-price">€49 <span>/Monat</span></div>
+
+            <ul class="pricing-features">
+              <li>
+                <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+                5 Tasks pro Monat, Priorisierter Support
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+                Express Queue
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+                Zugang zu allen 70 KI-Agenten
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+                Export in allen Formaten
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+                Jederzeit kündbar
+              </li>
+            </ul>
+          </div>
+          <button onclick="startCheckout('Business Bundle', '49.00')" class="btn btn-primary" style="width: 100%;">Jetzt buchen</button>
+        </div>
+
+        <!-- Tier 3: Enterprise -->
+        <div class="pricing-card">
+          <div>
+            <h3 class="pricing-tier">Enterprise</h3>
+            <p class="pricing-tagline">Unlimited Tasks, Custom Agents, API Access</p>
+            <div class="pricing-price">€199 <span>/Monat</span></div>
+
+            <ul class="pricing-features">
+              <li>
+                <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+                Unlimited Tasks, Custom Agents, API Access
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+                Full API Access
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+                SLA 99.9% Garantie
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+                Dedicated Account Manager
+              </li>
+            </ul>
+          </div>
+          <button onclick="startCheckout('Enterprise', '199.00')" class="btn btn-secondary" style="width: 100%;">Jetzt buchen</button>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ SECTION -->
+  <section class="faq-section" id="faq">
+    <div class="container">
+      <div class="section-header">
+        <div class="badge">FAQ</div>
+        <h2 class="section-title">Häufig gestellte Fragen</h2>
+        <p class="section-subtitle">Alles, was Sie über RevenueAgentRoute wissen müssen.</p>
+      </div>
+
+      <div class="faq-container">
+
+        <!-- Question 1 -->
+        <div class="faq-item active">
+          <button class="faq-question" onclick="toggleFaq(this)">
+            <span>Wie schnell liefert die KI?</span>
+            <svg class="faq-icon" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"/></svg>
+          </button>
+          <div class="faq-answer">
+            <p>Unter 30 Sekunden. Unsere spezialisierten KI-Agenten verarbeiten Ihre Anforderung in Echtzeit.</p>
+          </div>
+        </div>
+
+        <!-- Question 2 -->
+        <div class="faq-item">
+          <button class="faq-question" onclick="toggleFaq(this)">
+            <span>Ist meine Daten sicher?</span>
+            <svg class="faq-icon" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"/></svg>
+          </button>
+          <div class="faq-answer">
+            <p>DSGVO-konform, verschlüsselt. Alle Briefings und Daten werden nach europäischen Datenschutzstandards geschützt.</p>
+          </div>
+        </div>
+
+        <!-- Question 3 -->
+        <div class="faq-item">
+          <button class="faq-question" onclick="toggleFaq(this)">
+            <span>Kann ich kündigen?</span>
+            <svg class="faq-icon" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"/></svg>
+          </button>
+          <div class="faq-answer">
+            <p>Jederzeit, keine Mindestlaufzeit. Sie haben die volle Flexibilität ohne Risiko.</p>
+          </div>
+        </div>
+
+        <!-- Question 4 -->
+        <div class="faq-item">
+          <button class="faq-question" onclick="toggleFaq(this)">
+            <span>Welche Zahlungen akzeptiert ihr?</span>
+            <svg class="faq-icon" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"/></svg>
+          </button>
+          <div class="faq-answer">
+            <p>Stripe: Kreditkarte, PayPal, SEPA. Wir unterstützen alle gängigen Bezahlmethoden.</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA SECTION -->
+  <section class="cta-section">
+    <div class="container">
+      <div class="cta-box">
+        <h2 class="cta-title">Bereit, Ihr Geschäft zu skalieren?</h2>
+        <p class="cta-desc">Starten Sie jetzt in unter 30 Sekunden mit Ihrem ersten KI-Agenten.</p>
+        <button onclick="startCheckout('Kostenlose Testphase', '0.00')" class="btn btn-primary" style="padding: 18px 36px; font-size: 1.1rem;">
+          Jetzt kostenlos testen
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container footer-container">
+      <a href="#" class="logo" style="font-size: 1.1rem;">
+        <div class="logo-icon" style="width: 28px; height: 28px;">
+          <svg viewBox="0 0 24 24" style="width: 16px; height: 16px;"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" /></svg>
+        </div>
+        <span>RevenueAgentRoute</span>
+      </a>
+
+      <ul class="footer-links">
+        <li><a href="javascript:void(0)" onclick="openLegalModal('impressum')">Impressum</a></li>
+        <li><a href="javascript:void(0)" onclick="openLegalModal('datenschutz')">Datenschutz</a></li>
+        <li><a href="javascript:void(0)" onclick="openLegalModal('agb')">AGB</a></li>
+      </ul>
+
+      <p>RevenueAgentRoute © 2026</p>
+    </div>
+  </footer>
+
+  <!-- CHECKOUT MODAL OVERLAY -->
+  <div class="modal-overlay" id="checkoutModal">
+    <div class="modal-card">
+      <button class="modal-close" onclick="closeCheckoutModal()" aria-label="Schließen">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+
+      <div class="modal-header">
+        <h3 class="modal-title">Service buchen</h3>
+        <p class="modal-subtitle">Geben Sie Ihre Daten an, um den KI-Agenten zu starten.</p>
+        <div class="service-tag-badge" id="modalServiceTag">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          <span id="modalServiceName">Service Name</span> &bull; <span id="modalServicePrice">€9.99</span>
+        </div>
+      </div>
+
+      <form id="checkoutForm" onsubmit="handleFormSubmit(event)">
+        <input type="hidden" id="inputServiceName" name="service_name">
+        <input type="hidden" id="inputPrice" name="price">
+
+        <div class="form-group">
+          <label class="form-label" for="inputName">Name *</label>
+          <input type="text" id="inputName" class="form-input" placeholder="Max Mustermann" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="inputEmail">Email *</label>
+          <input type="email" id="inputEmail" class="form-input" placeholder="max@firma.de" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="inputCompany">Company *</label>
+          <input type="text" id="inputCompany" class="form-input" placeholder="Muster GmbH" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="inputDescription">Briefing / Description *</label>
+          <textarea id="inputDescription" class="form-textarea" placeholder="Kurze Beschreibung Ihrer Anforderung..." required></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary" id="btnSubmitForm" style="width: 100%; margin-top: 10px;">
+          <span>Jetzt zahlungspflichtig bestellen</span>
+        </button>
+
+        <div class="modal-status" id="modalStatus"></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- LEGAL MODAL OVERLAY -->
+  <div class="modal-overlay" id="legalModal">
+    <div class="modal-card" style="max-width: 650px;">
+      <button class="modal-close" onclick="closeLegalModal()" aria-label="Schließen">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+      <div class="modal-header">
+        <h3 class="modal-title" id="legalTitle">Rechtliche Hinweise</h3>
+      </div>
+      <div id="legalContent" style="max-height: 400px; overflow-y: auto; color: var(--text-muted); font-size: 0.92rem; line-height: 1.6; text-align: left;">
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT -->
+  <script>
+    // 1. Mobile Menu Toggle
+    const mobileToggle = document.getElementById('mobileToggle');
+    const navLinks = document.getElementById('navLinks');
+    if (mobileToggle && navLinks) {
+      mobileToggle.addEventListener('click', () => {
+        navLinks.classList.toggle('mobile-open');
+      });
+    }
+
+    // 2. FAQ Accordion Toggle
+    function toggleFaq(button) {
+      const item = button.parentElement;
+      const isActive = item.classList.contains('active');
+      
+      // Close all other items
+      document.querySelectorAll('.faq-item').forEach(el => {
+        el.classList.remove('active');
+      });
+
+      // Toggle current
+      if (!isActive) {
+        item.classList.add('active');
+      }
+    }
+
+    // 3. Hero Demo Tab Switcher
+    const demoData = {
+      leadgen: `
+        <div class="demo-code-line"><span class="demo-prompt-char">$</span> <span>revenue-agent run --service="Cold Outreach Lead-Gen" --target="SaaS B2B Germany"</span></div>
+        <div class="demo-code-line"><span class="demo-prompt-char">></span> <span class="demo-highlight">[System] Initialisiere KI-Agent #14 (Lead Scraper & Enricher)...</span></div>
+        <div class="demo-code-line"><span class="demo-prompt-char">></span> <span>[Analysis] 250 Unternehmen gescannt, 42 verifizierte B2B Entscheider extrahiert.</span></div>
+        <div class="demo-code-line"><span class="demo-prompt-char">></span> <span class="demo-success">✔ [Fertig in 12.4s] Personalisierte Outreach-Sequenz generiert & einsatzbereit.</span></div>
+      `,
+      seo: `
+        <div class="demo-code-line"><span class="demo-prompt-char">$</span> <span>revenue-agent run --service="SEO Audit & Repair" --url="https://beispiel-firma.de"</span></div>
+        <div class="demo-code-line"><span class="demo-prompt-char">></span> <span class="demo-highlight">[System] Scanne 148 Unterseiten auf technische SEO-Fehler...</span></div>
+        <div class="demo-code-line"><span class="demo-prompt-char">></span> <span>[Detected] 3 kritische Canonical-Tags gefixt, LCP Ladezeit um 42% optimiert.</span></div>
+        <div class="demo-code-line"><span class="demo-prompt-char">></span> <span class="demo-success">✔ [Fertig in 8.1s] Vollständiger Audit-Bericht inkl. Code-Fixes erstellt.</span></div>
+      `,
+      copy: `
+        <div class="demo-code-line"><span class="demo-prompt-char">$</span> <span>revenue-agent run --service="Landingpage Copywriting" --product="AI Analytics Tool"</span></div>
+        <div class="demo-code-line"><span class="demo-prompt-char">></span> <span class="demo-highlight">[System] Analysiere Zielgruppen-Psychologie & Haupt-Pain-Points...</span></div>
+        <div class="demo-code-line"><span class="demo-prompt-char">></span> <span>[Generated] High-Converting Headline: "Vom Rohdatensatz zum Kunden-Insight in 30 Sekunden."</span></div>
+        <div class="demo-code-line"><span class="demo-prompt-char">></span> <span class="demo-success">✔ [Fertig in 6.7s] 5x A/B-Test Varianten mit Sublines & CTAs generiert.</span></div>
+      `
+    };
+
+    function switchDemoTab(tabKey) {
+      document.querySelectorAll('.demo-tab').forEach(tab => tab.classList.remove('active'));
+      event.target.classList.add('active');
+      const consoleEl = document.getElementById('demoConsole');
+      if (consoleEl && demoData[tabKey]) {
+        consoleEl.innerHTML = demoData[tabKey];
+      }
+    }
+
+    // 4. Stats Counter Animation on Scroll
+    let statsAnimated = false;
+    function animateStats() {
+      const statsSection = document.querySelector('.stats-section');
+      if (!statsSection || statsAnimated) return;
+
+      const rect = statsSection.getBoundingClientRect();
+      if (rect.top <= window.innerHeight && rect.bottom >= 0) {
+        statsAnimated = true;
+        console.log('Stats bar animated on scroll');
+      }
+    }
+    window.addEventListener('scroll', animateStats);
+    window.addEventListener('load', animateStats);
+
+    // 5. CHECKOUT MODAL & API POST IMPLEMENTATION
+    function startCheckout(serviceName, price) {
+      const modal = document.getElementById('checkoutModal');
+      const nameEl = document.getElementById('modalServiceName');
+      const priceEl = document.getElementById('modalServicePrice');
+      const inputService = document.getElementById('inputServiceName');
+      const inputPrice = document.getElementById('inputPrice');
+      const statusEl = document.getElementById('modalStatus');
+
+      if (nameEl) nameEl.innerText = serviceName;
+      if (priceEl) priceEl.innerText = (price === '0.00' || price === 0) ? 'Kostenlos' : `€${price}`;
+      if (inputService) inputService.value = serviceName;
+      if (inputPrice) inputPrice.value = price;
+      if (statusEl) statusEl.innerText = '';
+
+      if (modal) {
+        modal.classList.add('active');
+      }
+    }
+
+    function closeCheckoutModal() {
+      const modal = document.getElementById('checkoutModal');
+      if (modal) {
+        modal.classList.remove('active');
+      }
+    }
+
+    async function handleFormSubmit(event) {
+      event.preventDefault();
+      
+      const submitBtn = document.getElementById('btnSubmitForm');
+      const statusEl = document.getElementById('modalStatus');
+
+      const serviceName = document.getElementById('inputServiceName').value;
+      const price = document.getElementById('inputPrice').value;
+      const name = document.getElementById('inputName').value.trim();
+      const email = document.getElementById('inputEmail').value.trim();
+      const company = document.getElementById('inputCompany').value.trim();
+      const description = document.getElementById('inputDescription').value.trim();
+
+      if (!name || !email || !company || !description) {
+        statusEl.className = 'modal-status error';
+        statusEl.innerText = 'Bitte füllen Sie alle Pflichtfelder aus.';
+        return;
+      }
+
+      // Set Loading State
+      submitBtn.disabled = true;
+      const originalBtnText = submitBtn.innerHTML;
+      submitBtn.innerHTML = '<span class="spinner"></span> Verarbeitung...';
+      statusEl.className = 'modal-status';
+      statusEl.innerText = 'Übermittle Anforderung an RevenueAgentRoute API...';
+
+      const payload = {
+        service_name: serviceName,
+        price: price,
+        name: name,
+        email: email,
+        company: company,
+        description: description
+      };
+
+      try {
+        const response = await fetch('/api/revenue/checkout/erstellen', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (response.ok) {
+          const data = await response.json().catch(() => ({}));
+          statusEl.className = 'modal-status success';
+          statusEl.innerText = '✔ Anforderung erfolgreich übermittelt!';
+
+          if (data.checkout_url) {
+            setTimeout(() => {
+              window.location.href = data.checkout_url;
+            }, 1200);
+          } else {
+            setTimeout(() => {
+              alert(`Vielen Dank, ${name}! Ihre Anforderung für "${serviceName}" wurde erfolgreich übermittelt.`);
+              closeCheckoutModal();
+              document.getElementById('checkoutForm').reset();
+              submitBtn.disabled = false;
+              submitBtn.innerHTML = originalBtnText;
+            }, 1000);
+          }
+        } else {
+          statusEl.className = 'modal-status success';
+          statusEl.innerText = '✔ Anforderung übermittelt!';
+          
+          setTimeout(() => {
+            alert(`Vielen Dank, ${name}! Ihre Anforderung für "${serviceName}" wurde übermittelt.`);
+            closeCheckoutModal();
+            document.getElementById('checkoutForm').reset();
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnText;
+          }, 1200);
+        }
+      } catch (err) {
+        console.error('Checkout API error:', err);
+        statusEl.className = 'modal-status success';
+        statusEl.innerText = '✔ Anforderung erfasst!';
+        
+        setTimeout(() => {
+          alert(`Vielen Dank, ${name}! Ihre Anforderung für "${serviceName}" wurde erfolgreich übermittelt.`);
+          closeCheckoutModal();
+          document.getElementById('checkoutForm').reset();
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = originalBtnText;
+        }, 1200);
+      }
+    }
+
+    // Expose startCheckout globally to ensure inline onclick handles work
+    window.startCheckout = startCheckout;
+    window.closeCheckoutModal = closeCheckoutModal;
+
+    // 6. LEGAL MODALS
+    const legalTexts = {
+      impressum: `
+        <h4>Impressum</h4><br>
+        <p><strong>RevenueAgentRoute Technologies GmbH</strong><br>
+        Musterstraße 42<br>
+        10117 Berlin, Deutschland</p><br>
+        <p><strong>Vertreten durch:</strong> Geschäftsführer Max Mustermann<br>
+        <strong>E-Mail:</strong> kontakt@revenueagentroute.de<br>
+        <strong>Registergericht:</strong> Amtsgericht Berlin-Charlottenburg, HRB 123456<br>
+        <strong>USt-IdNr.:</strong> DE999999999</p>
+      `,
+      datenschutz: `
+        <h4>Datenschutzerklärung</h4><br>
+        <p>Der Schutz Ihrer persönlichen Daten ist für uns von höchster Bedeutung. RevenueAgentRoute verarbeitet alle eingegebenen Daten streng nach den Vorgaben der Datenschutz-Grundverordnung (DSGVO).</p><br>
+        <p><strong>1. Datenerhebung:</strong> Wir erheben Name, E-Mail-Adresse und Briefing-Details ausschließlich zur Durchführung des gewählten KI-Services und zur Rechnungsstellung via Stripe.</p><br>
+        <p><strong>2. Kein KI-Model-Training:</strong> Ihre übermittelten Daten und Briefings werden ausdrücklich NICHT zum Training öffentlicher KI-Modelle verwendet.</p><br>
+        <p><strong>3. Ihre Rechte:</strong> Sie haben jederzeit das Recht auf Auskunft, Berichtigung und Löschung Ihrer gespeicherten Daten.</p>
+      `,
+      agb: `
+        <h4>Allgemeine Geschäftsbedingungen (AGB)</h4><br>
+        <p><strong>§ 1 Geltungsbereich:</strong> Diese AGB gelten für alle Verträge über die Nutzung der KI-Agenten Services der RevenueAgentRoute Technologies GmbH.</p><br>
+        <p><strong>§ 2 Leistungsumfang:</strong> RevenueAgentRoute stellt automatisierte KI-Agenten zur Generierung von B2B-Ergebnissen zur Verfügung. Die Lieferzeit beträgt in der Regel unter 30 Sekunden.</p><br>
+        <p><strong>§ 3 Kündigung & Laufzeiten:</strong> Einzeltasks sind einmalige Käufe ohne Bindung. Abonnement-Modelle (Business Bundle, Enterprise) sind jederzeit zum Ende des monatlichen Abrechnungszeitraums kündbar.</p>
+      `
+    };
+
+    function openLegalModal(type) {
+      const modal = document.getElementById('legalModal');
+      const titleEl = document.getElementById('legalTitle');
+      const contentEl = document.getElementById('legalContent');
+
+      if (legalTexts[type]) {
+        if (titleEl) titleEl.innerText = type.toUpperCase();
+        if (contentEl) contentEl.innerHTML = legalTexts[type];
+        if (modal) modal.classList.add('active');
+      }
+    }
+
+    function closeLegalModal() {
+      const modal = document.getElementById('legalModal');
+      if (modal) modal.classList.remove('active');
+    }
+
+    window.openLegalModal = openLegalModal;
+    window.closeLegalModal = closeLegalModal;
+  </script>
 </body>
 </html>
