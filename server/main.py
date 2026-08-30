@@ -1123,8 +1123,381 @@ async def get_kunde_ergebnis(session_id: str):
     else:
         return {'status': 'success', 'result': res}
 
+
+
+@router.get('/content', include_in_schema=False)
+async def public_content_page():
+    """Öffentliche Content-Seite mit allen generierten Marketing-Inhalten."""
+    articles = AutonomousMarketingEngine.seo_articles[-20:]
+    social = AutonomousMarketingEngine.social_posts[-10:]
+    emails = AutonomousMarketingEngine.cold_emails[-10:]
+    
+    html = """<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RevenueAgentRoute — KI Marketing Blog</title>
+<meta name="description" content="71 KI-Agenten generieren autonom SEO-Content, Social-Media-Posts und Cold-Emails. B2B Marketing Automation.">
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:800px;margin:0 auto;padding:20px;background:#0a0a0a;color:#e0e0e0;line-height:1.6}
+h1{color:#4ea8ff;font-size:1.8rem;border-bottom:2px solid #1a3a5c;padding-bottom:10px}
+h2{color:#4ea8ff;font-size:1.3rem;margin-top:30px}
+h3{color:#7cc3ff;font-size:1.1rem;margin-top:20px}
+article{background:#111;padding:20px;border-radius:8px;margin:15px 0;border-left:3px solid #4ea8ff}
+.meta{color:#666;font-size:0.85rem;margin-bottom:10px}
+.cta{background:#1a3a5c;padding:15px;border-radius:8px;text-align:center;margin:30px 0}
+.cta a{color:#4ea8ff;font-size:1.1rem;text-decoration:none;font-weight:bold}
+.badge{display:inline-block;background:#1a3a5c;color:#4ea8ff;padding:3px 10px;border-radius:12px;font-size:0.8rem;margin:2px}
+pre{white-space:pre-wrap;word-wrap:break-word}
+</style>
+</head>
+<body>
+<h1>🤖 RevenueAgentRoute — Autonomes KI Marketing</h1>
+<p><span class="badge">71 KI-Bots</span> <span class="badge">24/7 aktiv</span> <span class="badge">SEO-Content</span> <span class="badge">Social Media</span> <span class="badge">Cold Outreach</span></p>
+<p>71 KI-Agenten generieren rund um die Uhr Marketing-Content — vollständig autonom. SEO-Artikel, Social-Media-Posts, Cold-Emails und Directory-Listings.</p>
+<div class="cta"><a href="/">→ 7 Tage kostenlos testen</a></div>
+"""
+    
+    # Add SEO articles
+    if articles:
+        html += "<h2>📝 SEO-Artikel (automatisch generiert)</h2>"
+        for a in reversed(articles):
+            html += f'<article><div class="meta">Bot: {a.get("bot","")} | {a.get("created_at","")[:10]}</div>'
+            html += f'<pre>{a.get("content","")}</pre></article>'
+    
+    # Add social posts
+    if social:
+        html += "<h2>📱 Social-Media-Posts</h2>"
+        for s in reversed(social):
+            html += f'<article><div class="meta">Bot: {s.get("bot","")} | {s.get("platforms","")} | {s.get("created_at","")[:10]}</div>'
+            html += f'<pre>{s.get("content","")}</pre></article>'
+    
+    # Add cold emails
+    if emails:
+        html += "<h2>✉️ Cold-Email-Templates</h2>"
+        for e in reversed(emails):
+            html += f'<article><div class="meta">Bot: {e.get("bot","")} | Ziel: {e.get("target_industry","")} | {e.get("created_at","")[:10]}</div>'
+            html += f'<pre>{e.get("content","")}</pre></article>'
+    
+    # Status footer
+    status = AutonomousMarketingEngine.get_status()
+    html += f'<div class="cta"><p>Marketing-Engine Status: {"aktiv" if status["running"] else "offline"} | Zyklen: {status["total_campaigns"]} | Content: {status["content_pieces"]} Stück</p></div>'
+    html += "</body></html>"
+    
+    return HTMLResponse(content=html)
+
+@router.get('/sitemap.xml', include_in_schema=False)
+async def sitemap():
+    """XML-Sitemap für Suchmaschinen (Google, Bing)."""
+    base = os.getenv("BASE_URL", "https://web-production-e28af.up.railway.app")
+    urls = [f"{base}/", f"{base}/content"]
+    for a in AutonomousMarketingEngine.seo_articles:
+        urls.append(f"{base}/content#{a['id']}")
+    
+    xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
+    xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+    for url in urls:
+        xml += f'  <url><loc>{url}</loc><lastmod>{datetime.now(timezone.utc).strftime("%Y-%m-%d")}</lastmod><changefreq>daily</changefreq></url>\n'
+    xml += '</urlset>'
+    return HTMLResponse(content=xml, media_type="application/xml")
+
+@router.get('/robots.txt', include_in_schema=False)
+async def robots():
+    """robots.txt für Suchmaschinen."""
+    base = os.getenv("BASE_URL", "https://web-production-e28af.up.railway.app")
+    txt = f"""User-agent: *
+Allow: /
+Allow: /content
+Sitemap: {base}/sitemap.xml
+"""
+    return HTMLResponse(content=txt, media_type="text/plain")
+
+# ===== MARKETING API ENDPOINTS =====
+
+@router.get("/marketing/status")
+async def marketing_status():
+    """Status der autonomen Marketing-Engine."""
+    return AutonomousMarketingEngine.get_status()
+
+@router.get("/marketing/content")
+async def marketing_content(content_type: Optional[str] = None, limit: int = 50):
+    """Alle generierten Marketing-Inhalte abrufen."""
+    return AutonomousMarketingEngine.get_content(content_type=content_type, limit=limit)
+
+@router.get("/marketing/seo-articles")
+async def marketing_seo_articles(limit: int = 20):
+    """Generierte SEO-Artikel abrufen."""
+    return AutonomousMarketingEngine.seo_articles[:limit]
+
+@router.get("/marketing/social-posts")
+async def marketing_social_posts(limit: int = 20):
+    """Generierte Social-Media-Posts abrufen."""
+    return AutonomousMarketingEngine.social_posts[:limit]
+
+@router.get("/marketing/cold-emails")
+async def marketing_cold_emails(limit: int = 20):
+    """Generierte Cold-Email-Templates abrufen."""
+    return AutonomousMarketingEngine.cold_emails[:limit]
+
+@router.get("/marketing/directory-listings")
+async def marketing_directory_listings(limit: int = 20):
+    """Generierte Directory-Listings abrufen."""
+    return AutonomousMarketingEngine.directory_listings[:limit]
+
+@router.post("/marketing/trigger")
+async def marketing_trigger():
+    """Startet sofort einen Marketing-Zyklus."""
+    if AutonomousMarketingEngine.is_running:
+        # Run one cycle immediately in background
+        asyncio.create_task(AutonomousMarketingEngine._generate_seo_article())
+        asyncio.create_task(AutonomousMarketingEngine._generate_social_posts())
+        asyncio.create_task(AutonomousMarketingEngine._generate_cold_emails())
+        asyncio.create_task(AutonomousMarketingEngine._generate_directory_listing())
+        return {"status": "triggered", "message": "Marketing-Zyklus gestartet"}
+    return {"status": "error", "message": "Marketing-Engine nicht aktiv"}
+
 # ================================================================
 # FASTAPI APP
+# ================================================================
+
+
+# ================================================================
+# AUTONOMOUS MARKETING ENGINE — Bots werben autonom im Web
+# ================================================================
+
+class AutonomousMarketingEngine:
+    """71 Bots generieren autonom Marketing-Content und veröffentlichen ihn."""
+    
+    marketing_content: List[Dict] = []
+    social_posts: List[Dict] = []
+    cold_emails: List[Dict] = []
+    seo_articles: List[Dict] = []
+    directory_listings: List[Dict] = []
+    is_running: bool = False
+    last_run: Optional[datetime] = None
+    total_campaigns: int = 0
+    
+    # Marketing-fähige Bots
+    MARKETING_BOTS = [
+        "cold_outreach_leadgen", "seo_audit_repair", "social_reputation_mgmt",
+        "programmatic_content_seo", "conversion_rate_opt", "newsletter_growth_curation",
+        "email_template_design", "landingpage_copywriting", "case_study_testimonial_gen",
+        "programmatic_newsletter_ads", "generative_engine_optimization",
+        "google_business_local_seo", "influencer_marketing_broker",
+        "affiliate_niche_bot", "podcast_to_blog_repurpose"
+    ]
+    
+    @classmethod
+    async def run_marketing_cycle(cls):
+        """Ein vollständiger Marketing-Zyklus — läuft alle 3 Stunden."""
+        cls.is_running = True
+        while cls.is_running:
+            try:
+                logger.info("Marketing Engine: Zyklus gestartet")
+                cls.total_campaigns += 1
+                
+                # 1. SEO-Artikel generieren
+                await cls._generate_seo_article()
+                
+                # 2. Social-Media-Posts erstellen
+                await cls._generate_social_posts()
+                
+                # 3. Cold-Email-Sequenz generieren
+                await cls._generate_cold_emails()
+                
+                # 4. Directory-Listing erstellen
+                await cls._generate_directory_listing()
+                
+                # 5. Landing-Page-Copy optimieren
+                await cls._optimize_landing_copy()
+                
+                cls.last_run = datetime.now(timezone.utc)
+                logger.info(f"Marketing Engine: Zyklus #{cls.total_campaigns} abgeschlossen")
+                
+            except Exception as e:
+                logger.error(f"Marketing Engine Fehler: {e}")
+            
+            # Alle 3 Stunden
+            await asyncio.sleep(10800)
+    
+    @classmethod
+    async def _generate_seo_article(cls):
+        """Generiert einen SEO-optimierten Blog-Artikel."""
+        topics = [
+            "Wie KI-Agenten B2B-Vertrieb automatisieren",
+            "71 KI-Bots die 24/7 Umsatz generieren",
+            "Lead Generation Automation mit KI",
+            "Warum Microsoft und JPMorgan auf KI-Agenten setzen",
+            "B2B Marketing Automation ohne Personal",
+            "KI-gestützte Cold Outreach die funktioniert",
+            "Conversion Optimierung mit autonomen Agenten",
+            "SEO Automation: Content generieren lassen",
+            "Vom Lead zum Deal — vollautomatisch mit KI",
+            "Wie KMU von KI-Agenten profitieren"
+        ]
+        topic = topics[cls.total_campaigns % len(topics)]
+        
+        prompt = f"""Schreibe einen SEO-optimierten B2B-Artikel über: '{topic}'.
+        Struktur: H1 Titel, Einleitung (2 Sätze), 3 H2 Abschnitte mit je 2-3 Sätzen, Fazit.
+        Keywords: KI-Agenten, B2B Automation, Lead Generation, Marketing Automation.
+        Sprache: Deutsch. Maximal 400 Wörter. Praktisch und konkret."""
+        
+        content = await SmartAIRouter.call_llm_efficient(prompt, "programmatic_content_seo")
+        
+        article = {
+            "id": f"art_{uuid.uuid4().hex[:8]}",
+            "topic": topic,
+            "content": content,
+            "status": "published",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "bot": "programmatic_content_seo",
+            "type": "seo_article"
+        }
+        cls.seo_articles.append(article)
+        cls.marketing_content.append(article)
+        return article
+    
+    @classmethod
+    async def _generate_social_posts(cls):
+        """Generiert Social-Media-Posts für LinkedIn, Twitter, Facebook."""
+        platforms = ["LinkedIn", "Twitter/X", "Facebook"]
+        angles = [
+            "Problem-Lösung: 71 KI-Agenten automatisieren B2B-Vertrieb",
+            "Social Proof: Wie Microsoft und JPMorgan KI einsetzen",
+            "Kosten-Vergleich: 1 Mensch + 71 KI-Bots vs. 20 Mitarbeiter",
+            "Free Trial: 7 Tage kostenlos testen, keine Kreditkarte",
+            "Ergebnis: Vom Lead zum Deal — vollautomatisch in unter 60 Sekunden"
+        ]
+        angle = angles[cls.total_campaigns % len(angles)]
+        
+        prompt = f"""Schreibe 3 Social-Media-Posts für {', '.join(platforms)}.
+        Thema: {angle}
+        LinkedIn: Professionell, 3 Sätze, mit Call-to-Action.
+        Twitter/X: Kurz, punchy, max 280 Zeichen, mit Hashtags.
+        Facebook: Conversational, Frage am Ende, Emoji erlaubt.
+        Sprache: Deutsch."""
+        
+        content = await SmartAIRouter.call_llm_efficient(prompt, "social_reputation_mgmt")
+        
+        post = {
+            "id": f"soc_{uuid.uuid4().hex[:8]}",
+            "angle": angle,
+            "content": content,
+            "platforms": platforms,
+            "status": "ready_to_post",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "bot": "social_reputation_mgmt",
+            "type": "social_post"
+        }
+        cls.social_posts.append(post)
+        cls.marketing_content.append(post)
+        return post
+    
+    @classmethod
+    async def _generate_cold_emails(cls):
+        """Generiert Cold-Email-Sequenzen für B2B-Outreach."""
+        industries = [
+            "Digitalagenturen in DACH", "SaaS-Startups in Europa",
+            "KMU mit Legacy-Systemen", "E-Commerce-Unternehmen",
+            "Logistikunternehmen", "Immobilienmakler",
+            "Steuerberater und Kanzleien", "Handwerksbetriebe"
+        ]
+        industry = industries[cls.total_campaigns % len(industries)]
+        
+        prompt = f"""Schreibe eine Cold-Email an {industry}.
+        Betreff: Personalisiert, neugierig machend.
+        Body: 3 Sätze. Problem → Lösung (71 KI-Agenten) → CTA (7 Tage kostenlos testen).
+        Referenz: Microsoft und JPMorgan setzen KI-Agenten ein.
+        PS: Keine Kreditkarte erforderlich.
+        Sprache: Deutsch."""
+        
+        content = await SmartAIRouter.call_llm_efficient(prompt, "cold_outreach_leadgen")
+        
+        email = {
+            "id": f"email_{uuid.uuid4().hex[:8]}",
+            "target_industry": industry,
+            "content": content,
+            "status": "ready_to_send",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "bot": "cold_outreach_leadgen",
+            "type": "cold_email"
+        }
+        cls.cold_emails.append(email)
+        cls.marketing_content.append(email)
+        return email
+    
+    @classmethod
+    async def _generate_directory_listing(cls):
+        """Generiert Directory-Listing-Texte für Business-Verzeichnisse."""
+        directories = [
+            "Google Business Profile", "Trustpilot", "Clutch.co",
+            "Capterra", "G2.com", "Yelp Business", "Hotfrog"
+        ]
+        directory = directories[cls.total_campaigns % len(directories)]
+        
+        prompt = f"""Schreibe ein Company-Listing für {directory}.
+        Firma: RevenueAgentRoute — 71 KI-Agenten für B2B-Automation.
+        Beschreibung: 3 Sätze. Services: Lead Generation, SEO, Content, Cold Outreach, Conversion Optimierung.
+        USP: 1 Mensch + 71 KI-Bots. 7 Tage kostenlos testen.
+        Sprache: Deutsch."""
+        
+        content = await SmartAIRouter.call_llm_efficient(prompt, "google_business_local_seo")
+        
+        listing = {
+            "id": f"dir_{uuid.uuid4().hex[:8]}",
+            "directory": directory,
+            "content": content,
+            "status": "ready_to_submit",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "bot": "google_business_local_seo",
+            "type": "directory_listing"
+        }
+        cls.directory_listings.append(listing)
+        cls.marketing_content.append(listing)
+        return listing
+    
+    @classmethod
+    async def _optimize_landing_copy(cls):
+        """Optimiert Landing-Page-Copy basierend auf aktuellen Trends."""
+        prompt = """Analysiere die RevenueAgentRoute Landing Page.
+        Was kann verbessert werden? Headline, CTA, Value Proposition.
+        Gib 3 konkrete Verbesserungsvorschläge in 2 Sätzen.
+        Sprache: Deutsch."""
+        
+        content = await SmartAIRouter.call_llm_efficient(prompt, "landingpage_copywriting")
+        
+        optimization = {
+            "id": f"opt_{uuid.uuid4().hex[:8]}",
+            "suggestions": content,
+            "status": "analyzed",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "bot": "landingpage_copywriting",
+            "type": "landing_optimization"
+        }
+        cls.marketing_content.append(optimization)
+        return optimization
+    
+    @classmethod
+    def get_status(cls) -> Dict:
+        return {
+            "running": cls.is_running,
+            "last_run": cls.last_run.isoformat() if cls.last_run else None,
+            "total_campaigns": cls.total_campaigns,
+            "content_pieces": len(cls.marketing_content),
+            "seo_articles": len(cls.seo_articles),
+            "social_posts": len(cls.social_posts),
+            "cold_emails": len(cls.cold_emails),
+            "directory_listings": len(cls.directory_listings),
+            "active_bots": len(cls.MARKETING_BOTS)
+        }
+    
+    @classmethod
+    def get_content(cls, content_type: Optional[str] = None, limit: int = 50) -> List[Dict]:
+        if content_type:
+            return [c for c in cls.marketing_content if c.get("type") == content_type][:limit]
+        return cls.marketing_content[:limit]
+
 # ================================================================
 
 @asynccontextmanager
@@ -1136,6 +1509,9 @@ async def lifespan(app: FastAPI):
     logger.info(f"Keep-Alive: aktiv — Ping alle 4 Min (verhindert Railway Sleep)")
     # Keep-Alive starten
     asyncio.create_task(KeepAliveSystem.start_keep_alive())
+    # Autonomous Marketing Engine starten
+    asyncio.create_task(AutonomousMarketingEngine.run_marketing_cycle())
+    logger.info("Marketing Engine: aktiv — 15 Bots generieren autonom alle 3 Stunden Content")
     yield
     await KeepAliveSystem.stop()
     await global_http_client.aclose()
