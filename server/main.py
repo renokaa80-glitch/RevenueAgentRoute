@@ -118,7 +118,7 @@ learning_knowledge: List[Dict] = []
 audit_logs: List[Dict] = []
 tenants: Dict[str, dict] = {}
 
-current_version: str = "25.0.0"
+current_version: str = "26.0.0"
 
 # ===== TOKEN SAVER SYSTEM (NEW) =====
 class TokenSaver:
@@ -2086,6 +2086,35 @@ class AutonomousMarketingEngine:
         "Handwerk & Bau": [
             {"company": "Scholl & Balloff", "email": "mail@schollballoff.de", "website": "https://schollballoff.de", "city": "Düsseldorf"},
             {"company": "Ecommaze Marketing", "email": "info@ecommaze.de", "website": "https://ecommaze.de", "city": "Memmingen"},
+        ],
+        "Österreich Digitalagenturen (neu)": [
+            {"company": "Brandig Digital", "email": "office@brandig.at", "website": "https://brandig.at", "city": "Steiermark, AT"},
+            {"company": "Menasse Kommunikation", "email": "hello@menassemenasse.at", "website": "https://menassemenasse.at", "city": "Wien, AT"},
+            {"company": "SPiNNWERK", "email": "kontakt@spinnwerk.at", "website": "https://spinnwerk.at", "city": "Wien, AT"},
+            {"company": "Ratonga Digital", "email": "office@ratonga.at", "website": "https://ratonga.at", "city": "Schweiggers, AT"},
+            {"company": "Digital Wannabeez", "email": "office@digital-wannabeez.at", "website": "https://www.digital-wannabeez.at", "city": "Engerwitzdorf, AT"},
+        ],
+        "Weitere IT & Consulting (neu)": [
+            {"company": "AANetConsult IT", "email": "info@aanetconsult.com", "website": "https://www.aanetconsult.de", "city": "Darmstadt"},
+            {"company": "Steinbeis Finance", "email": "info@steinbeis-finance.de", "website": "https://steinbeis-finance.de", "city": "Deutschland"},
+            {"company": "Nebbe Consulting", "email": "info@nebbe-consulting.de", "website": "https://nebbe-consulting.de", "city": "Hamburg"},
+            {"company": "Startup Factories", "email": "info@startup-factories.de", "website": "https://startup-factories.de", "city": "Berlin/München"},
+            {"company": "KlickPiloten", "email": "stuttgart@klickpiloten.de", "website": "https://klickpiloten.de", "city": "Stuttgart/Hamburg/Berlin"},
+            {"company": "Andy Fox Social Media", "email": "andy@andy-fox.com", "website": "https://andy-fox.com", "city": "München"},
+        ],
+        "UK Digital (neu)": [
+            {"company": "Impression Digital", "email": "hello@impressiondigital.com", "website": "https://www.impressiondigital.com", "city": "London, UK"},
+            {"company": "NX Digital Solutions", "email": "info@nxdigitalsolutions.com", "website": "https://www.nxdigitalsolutions.com", "city": "UK"},
+        ],
+        "International Startups (neu)": [
+            {"company": "MONSOON Agency", "email": "hello@monsoon.agency", "website": "https://monsoon.agency", "city": "Berlin"},
+            {"company": "Ellevate Paris", "email": "contact@ellevate.fr", "website": "https://ellevate.fr", "city": "Paris, FR"},
+            {"company": "Agence CL WEB", "email": "contact@agenceclweb.fr", "website": "https://agenceclweb.fr", "city": "Provence, FR"},
+            {"company": "WebSteve", "email": "contact@websteve.fr", "website": "https://websteve.fr", "city": "Frankreich"},
+            {"company": "AIxH Luxembourg", "email": "hello@aixh.com", "website": "https://aixh.fr", "city": "Luxembourg"},
+            {"company": "Webvory India", "email": "hello@webvory.com", "website": "https://webvory.com", "city": "Mohali, IN"},
+            {"company": "Indian SEO Agency", "email": "sales@indianseoagency.com", "website": "https://indianseoagency.com", "city": "Indien"},
+            {"company": "Brandchanakya", "email": "info@brandchanakya.in", "website": "https://brandchanakya.in", "city": "Indien"},
         ],
     }
     
