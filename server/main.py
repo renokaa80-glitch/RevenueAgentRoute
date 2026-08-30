@@ -118,7 +118,7 @@ learning_knowledge: List[Dict] = []
 audit_logs: List[Dict] = []
 tenants: Dict[str, dict] = {}
 
-current_version: str = "22.2.0"
+current_version: str = "23.0.0"
 
 # ===== TOKEN SAVER SYSTEM (NEW) =====
 class TokenSaver:
@@ -1609,6 +1609,15 @@ async def outreach_run_now(req: dict = None):
         result = await AutonomousMarketingEngine._autonomous_cold_outreach()
     return result or {"status": "skipped", "message": "Outreach deaktiviert oder kein Ergebnis"}
 
+@router.post("/marketing/outreach/search-prospects")
+async def search_prospects(req: dict):
+    """Sucht echte Firmenkontakte per Web-Suche — kein Versand, nur Recherche.
+    Test-Endpunkt: zeigt welche Kontakte gefunden wuerden, bevor Outreach an geht."""
+    industry = req.get("industry", "Digitalagenturen in DACH")
+    count = req.get("count", 5)
+    prospects = await AutonomousMarketingEngine._find_real_prospects(industry, count)
+    return {"industry": industry, "found": len(prospects), "prospects": prospects}
+
 @router.get("/marketing/outreach/sent")
 async def outreach_sent_log(limit: int = 50):
     return AutonomousMarketingEngine.outreach_sent[-limit:]
@@ -1980,6 +1989,137 @@ class AutonomousMarketingEngine:
         return email
     
     @classmethod
+    async def _find_real_prospects(cls, industry: str, count: int = 5) -> List[Dict]:
+        """Findet ECHTE Firmen aus oeffentlichen Quellen — keine KI-Erfindungen.
+        Nutzt Web-Suche um echte Firmenwebseiten zu finden, extrahiert dann
+        die echte Kontakt-Email von der Webseite."""
+        import urllib.request
+        import urllib.parse
+        import re as _re
+        import ssl
+        
+        # Web-Suche nach echten Firmen in der Branche
+        search_query = f"{industry} site:de OR site:at OR site:ch impressum kontakt"
+        search_url = f"https://html.duckduckgo.com/html/?q={urllib.parse.quote(search_query)}"
+        
+        prospects = []
+        try:
+            ctx = ssl.create_default_context()
+            ctx.check_hostname = False
+            ctx.verify_mode = ssl.CERT_NONE
+            req = urllib.request.Request(search_url, headers={
+                "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+            })
+            resp = urllib.request.urlopen(req, timeout=15, context=ctx)
+            html = resp.read().decode("utf-8", errors="ignore")
+            
+            # Extract real company URLs from search results
+            url_pattern = _re.compile(r'href="(https?://[^"]+)"[^>]*class="result__a"', _re.IGNORECASE)
+            urls = url_pattern.findall(html)
+            # Also try alternate DDG format
+            if not urls:
+                url_pattern2 = _re.compile(r'class="result__url"[^>]*>([^<]+)<', _re.IGNORECASE)
+                raw_urls = url_pattern2.findall(html)
+                urls = [f"https://{u.strip()}" for u in raw_urls if u.strip()]
+            
+            # Filter: only real company websites, no social media / directories
+            skip_domains = ["linkedin.com", "facebook.com", "instagram.com", "twitter.com",
+                           "youtube.com", "tiktok.com", "wikipedia.org", "amazon.",
+                           "ebay.", "yelp.", "gelbeseiten", "dasoertliche", "11880",
+                           "duckduckgo", "google."]
+            
+            company_urls = []
+            for url in urls[:20]:
+                url_lower = url.lower()
+                if any(s in url_lower for s in skip_domains):
+                    continue
+                company_urls.append(url)
+                if len(company_urls) >= count * 3:  # 3x overfetch for filtering
+                    break
+            
+            logger.info(f"Outreach: {len(company_urls)} echte Firmen-URLs fuer '{industry}' gefunden")
+            
+            # For each URL: fetch the page and extract contact email from Impressum
+            for company_url in company_urls:
+                if len(prospects) >= count:
+                    break
+                try:
+                    # Try Impressum page first (required by law in DACH)
+                    impressum_url = company_url.rstrip("/") + "/impressum"
+                    try:
+                        req2 = urllib.request.Request(impressum_url, headers={
+                            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+                        })
+                        resp2 = urllib.request.urlopen(req2, timeout=10, context=ctx)
+                        page_html = resp2.read().decode("utf-8", errors="ignore")
+                    except:
+                        # Fallback: try /kontakt
+                        kontakt_url = company_url.rstrip("/") + "/kontakt"
+                        try:
+                            req3 = urllib.request.Request(kontakt_url, headers={
+                                "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+                            })
+                            resp3 = urllib.request.urlopen(req3, timeout=10, context=ctx)
+                            page_html = resp3.read().decode("utf-8", errors="ignore")
+                        except:
+                            # Last resort: fetch homepage
+                            req4 = urllib.request.Request(company_url, headers={
+                                "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+                            })
+                            resp4 = urllib.request.urlopen(req4, timeout=10, context=ctx)
+                            page_html = resp4.read().decode("utf-8", errors="ignore")
+                    
+                    # Extract email addresses from the page
+                    email_regex = _re.compile(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}')
+                    emails = email_regex.findall(page_html)
+                    
+                    # Filter out generic/irrelevant emails
+                    skip_emails = ["sentry", "noreply", "no-reply", "donotreply",
+                                   "privacy", "dpo", "datenschutz", "abuse",
+                                   "postmaster", "webmaster", "hostmaster"]
+                    # Also skip obvious private emails
+                    skip_domains_email = ["gmail.com", "yahoo.com", "hotmail.com",
+                                          "outlook.com", "web.de", "gmx.de", "icloud.com"]
+                    
+                    good_email = None
+                    for email in emails:
+                        email_lower = email.lower()
+                        domain = email_lower.split("@")[-1] if "@" in email_lower else ""
+                        if any(s in email_lower for s in skip_emails):
+                            continue
+                        if domain in skip_domains_email:
+                            continue
+                        good_email = email_lower
+                        break
+                    
+                    if good_email:
+                        # Extract company name from URL
+                        company_name = company_url.replace("https://", "").replace("http://", "").replace("www.", "").split("/")[0].split(".")[0].capitalize()
+                        prospects.append({
+                            "company": company_name,
+                            "email": good_email,
+                            "website": company_url,
+                            "reason": "KI-Automatisierung",
+                            "industry": industry,
+                            "source": "web_search_verified",
+                            "email_verified": True
+                        })
+                        logger.info(f"Outreach: Echter Kontakt gefunden: {company_name} -> {good_email}")
+                    
+                    # Human-like delay between page fetches
+                    import random as _rnd3
+                    await asyncio.sleep(_rnd3.uniform(2, 5))
+                    
+                except Exception as e:
+                    logger.warning(f"Outreach: Fehler beim Abruf von {company_url}: {e}")
+                    continue
+                    
+        except Exception as e:
+            logger.error(f"Outreach: Web-Suche fehlgeschlagen: {e}")
+        
+        return prospects
+
+    @classmethod
     async def _autonomous_cold_outreach(cls):
         """Findet automatisch B2B-Kunden und sendet Cold-Emails — MENSCHLICH, nicht spammy."""
         if not cls.outreach_enabled:
@@ -2008,47 +2148,15 @@ class AutonomousMarketingEngine:
         ]
         industry = industries[cls.total_campaigns % len(industries)]
         
-        # Step 1: AI finds potential target companies + emails
-        prospect_prompt = f"""Finde 5 reale B2B-Unternehmen aus '{industry}' die KI-Automatisierung brauchen.
-        Format pro Zeile (genau so):
-        Firmenname | Kontakt-Email | kurzer Grund warum sie KI brauchen
+        # Step 1: FINDE ECHTE FIRMEN per Web-Suche (keine KI-Erfindungen!)
+        prospects = await cls._find_real_prospects(industry, count=5)
         
-        Nutze reale Firmen und echte Webseiten-Emails (info@, kontakt@, hallo@).
-        Keine erfundenen Adressen."""
-        
-        try:
-            prospect_result = await SmartAIRouter.call_llm_efficient(prospect_prompt, "lead_generation")
-        except Exception as e:
-            logger.error(f"Outreach: Lead-Generierung fehlgeschlagen: {e}")
+        if not prospects:
+            logger.warning(f"Outreach: Keine echten Prospects fuer {industry} gefunden — ueberspringe")
             return
         
-        # Parse prospects — MIT VALIDIERUNG (verhindert Bounces + Spam-Risiko)
-        import re as _re
-        email_pattern = _re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
-        # Bekannte Grossfirmen-Domains blocken — die AI erfindet oft plausible aber falsche
-        # info@-Adressen bei bekannten Marken, was zu Bounces + Reputationsschaden fuehrt
-        blocked_domains = ["snyk.io", "google.com", "microsoft.com", "amazon.com", "apple.com",
-                           "meta.com", "salesforce.com", "sap.com", "oracle.com", "ibm.com"]
-        prospects = []
-        for line in prospect_result.strip().split("\n"):
-            parts = [p.strip() for p in line.split("|")]
-            if len(parts) >= 2 and "@" in parts[1]:
-                email_candidate = parts[1].strip()
-                if not email_pattern.match(email_candidate):
-                    continue
-                domain = email_candidate.split("@")[-1].lower()
-                if domain in blocked_domains:
-                    logger.warning(f"Outreach: {email_candidate} blockiert (bekannte Grossfirma-Domain)")
-                    continue
-                # Skip bereits gebounced Adressen
-                if any(b.get("email") == email_candidate for b in cls.bounced_emails):
-                    continue
-                prospects.append({
-                    "company": parts[0],
-                    "email": email_candidate,
-                    "reason": parts[2] if len(parts) > 2 else "KI-Automatisierung",
-                    "industry": industry
-                })
+        # Filter: skip bounced emails
+        prospects = [p for p in prospects if not any(b.get("email") == p["email"] for b in cls.bounced_emails)]
         
         if not prospects:
             logger.warning(f"Outreach: Keine gueltigen Prospects fuer {industry} gefunden")
