@@ -118,7 +118,7 @@ learning_knowledge: List[Dict] = []
 audit_logs: List[Dict] = []
 tenants: Dict[str, dict] = {}
 
-current_version: str = "24.1.0"
+current_version: str = "24.2.0"
 
 # ===== TOKEN SAVER SYSTEM (NEW) =====
 class TokenSaver:
@@ -2280,19 +2280,102 @@ class AutonomousMarketingEngine:
     
     @classmethod
     async def _autonomous_cold_outreach_manual(cls, industry: str):
-        """Manuelle Cold-Outreach fuer eine spezifische Branche."""
-        old_campaigns = cls.total_campaigns
-        industries = [
-            "Digitalagenturen in DACH", "SaaS-Startups in Europa",
-            "KMU mit Legacy-Systemen", "E-Commerce-Unternehmen",
-            "Logistikunternehmen", "Immobilienmakler",
-            "Steuerberater und Kanzleien", "Handwerksbetriebe"
-        ]
-        if industry in industries:
-            cls.total_campaigns = industries.index(industry)
-        result = await cls._autonomous_cold_outreach()
-        cls.total_campaigns = old_campaigns
-        return result
+        """Manuelle Cold-Outreach fuer eine spezifische Branche - nutzt verified_prospect_lists."""
+        prospects = await cls._find_real_prospects(industry, count=10)
+        if not prospects:
+            return {"status": "no_prospects", "message": f"Keine Kontakte fuer {industry} gefunden"}
+        
+        if not EmailEngine.is_configured:
+            return {"status": "no_smtp", "message": "SMTP nicht konfiguriert"}
+        
+        max_per_day = 25
+        sent_today = sum(1 for s in cls.outreach_sent 
+                        if s.get("timestamp","")[:10] == datetime.now(timezone.utc).strftime("%Y-%m-%d"))
+        if sent_today >= max_per_day:
+            return {"status": "daily_limit", "message": f"Tageslimit ({max_per_day}) erreicht"}
+        
+        remaining = max_per_day - sent_today
+        prospects = prospects[:remaining]
+        
+        sent_count = 0
+        for prospect in prospects:
+            company = prospect["company"]
+            email_addr = prospect["email"]
+            
+            already_contacted = any(
+                s.get("email") == email_addr or s.get("to") == email_addr 
+                for s in cls.outreach_sent
+            )
+            if already_contacted:
+                continue
+            
+            import random as _rnd
+            sender_names = ["Sarah", "Michael", "Lisa", "Thomas", "Anna", "Daniel", "Julia", "Mark"]
+            sender_name = _rnd.choice(sender_names)
+            
+            personal_prompt = (
+                f"Schreibe eine kurze Email an {company} ({prospect.get('city','')}). "
+                f"Die Firma ist eine {industry}. "
+                f"WICHTIG - Schreibe wie ein MENSCH der morgens im Buero sitzt: "
+                f"Sehr kurz: 2-3 Saetze, nicht mehr. "
+                f"Natuerlich, als wuerdest du einer Kollegin etwas erzaehlen. "
+                f"Keine Aufzaehlungen, keine Listen. "
+                f"Keine Marketing-Sprache, kein Wir bieten. "
+                f"Keine 71 KI-Agenten, kein Bot, kein KI im ersten Satz. "
+                f"Fang mit einer konkreten Beobachtung an. "
+                f"Ende mit einer einfachen Frage. "
+                f"Unterschreib mit Gruesse, {sender_name}. "
+                f"Betreff: Max 40 Zeichen, neugierig, keine Ausrufezeichen. "
+                f"Sprache: Deutsch, locker aber professionell. "
+                f"KEINE Uebertreibung, keine Superlative."
+            )
+            
+            try:
+                email_content = await SmartAIRouter.call_llm_efficient(personal_prompt, "cold_outreach_leadgen")
+            except Exception as e:
+                logger.error(f"Outreach: Email-Gen fuer {company} fehlgeschlagen: {e}")
+                continue
+            
+            lines = email_content.strip().split("\n")
+            subject = lines[0].replace("Betreff:", "").replace("Subject:", "").strip()
+            body = "\n".join(lines[1:]).strip()
+            if not subject:
+                subject = f"Kurze Frage an {company}"
+            if not body:
+                body = email_content
+            
+            import re as _re2
+            placeholder_pattern = _re2.compile(r'\[(Name|Firma|Vorname|Nachname|Company|Branche)\]', _re2.IGNORECASE)
+            if placeholder_pattern.search(body) or placeholder_pattern.search(subject):
+                body = placeholder_pattern.sub("", body)
+                subject = placeholder_pattern.sub("", subject)
+                body = body.replace("Hallo ,", "Hallo,").replace("Hallo  ,", "Hallo,")
+                body = _re2.sub(r' {2,}', ' ', body)
+                subject = _re2.sub(r' {2,}', ' ', subject).strip()
+            
+            result = await EmailEngine.send_email(email_addr, subject, body, "cold_outreach_leadgen")
+            
+            outreach_record = {
+                "id": f"outreach_{uuid.uuid4().hex[:8]}",
+                "company": company,
+                "email": email_addr,
+                "industry": industry,
+                "subject": subject,
+                "status": result.get("status", "error"),
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }
+            cls.outreach_sent.append(outreach_record)
+            
+            if result.get("status") == "sent":
+                sent_count += 1
+                logger.info(f"Outreach: Mail an {company} ({email_addr}) gesendet")
+            else:
+                cls.bounced_emails.append({"email": email_addr, "company": company, "reason": result.get("message","")})
+            
+            import random as _rnd2
+            await asyncio.sleep(_rnd2.randint(30, 90))
+        
+        return {"sent": sent_count, "industry": industry, "remaining_today": max_per_day - sent_today - sent_count}
     
     @classmethod
     async def _generate_directory_listing(cls):
