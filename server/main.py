@@ -102,6 +102,12 @@ rechnungs_speicher: Dict[str, dict] = {}
 task_speicher: Dict[str, dict] = {}
 evolution_history: List[Dict] = []
 kunden_register: Dict[str, dict] = {}
+# Lead Capture System
+captured_leads: List[Dict] = []
+# Auto-Response System  
+email_responses: List[Dict] = []
+# Campaign Analytics
+campaign_stats: Dict[str, Dict] = {}
 checkout_sessions: Dict[str, dict] = {}
 
 # NEW: V19.1.0 storage
@@ -112,7 +118,7 @@ learning_knowledge: List[Dict] = []
 audit_logs: List[Dict] = []
 tenants: Dict[str, dict] = {}
 
-current_version: str = "21.0.0"
+current_version: str = "22.0.0"
 
 # ===== TOKEN SAVER SYSTEM (NEW) =====
 class TokenSaver:

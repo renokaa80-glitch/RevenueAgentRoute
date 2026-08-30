@@ -845,6 +845,48 @@
     }
 
     /* CTA SECTION */
+    /* Lead Capture Form */
+    .lead-form { display: flex; flex-direction: column; gap: 12px; margin-top: 24px; max-width: 480px; margin-left: auto; margin-right: auto; }
+    .lead-form input, .lead-form textarea {
+        background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2);
+        border-radius: 8px; padding: 12px 16px; color: #fff; font-size: 0.95rem; width: 100%;
+        box-sizing: border-box; transition: border-color 0.3s;
+    }
+    .lead-form input:focus, .lead-form textarea:focus { border-color: #4ea8ff; outline: none; }
+    .lead-form input::placeholder, .lead-form textarea::placeholder { color: rgba(255,255,255,0.4); }
+    .lead-form textarea { min-height: 60px; resize: vertical; }
+    .lead-form-row { display: flex; gap: 12px; }
+    .lead-form-row input { flex: 1; }
+    .lead-form button {
+        background: linear-gradient(135deg, #4ea8ff, #2196f3); color: #fff;
+        border: none; border-radius: 8px; padding: 14px 24px; font-size: 1rem;
+        font-weight: 600; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .lead-form button:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(78,168,255,0.4); }
+    .lead-form button:disabled { opacity: 0.6; cursor: not-allowed; }
+    .lead-form-success {
+        background: rgba(76,175,80,0.15); border: 1px solid rgba(76,175,80,0.4);
+        border-radius: 8px; padding: 16px; margin-top: 16px; color: #81c784;
+        font-size: 0.9rem; display: none;
+    }
+    .lead-form-success.show { display: block; }
+    .lead-score-badge {
+        display: inline-block; background: rgba(78,168,255,0.15); border: 1px solid rgba(78,168,255,0.4);
+        border-radius: 4px; padding: 2px 8px; font-size: 0.8rem; color: #4ea8ff; margin-top: 8px;
+    }
+    /* Campaign Analytics Section */
+    .analytics-section { padding: 60px 20px; background: #0a0e14; }
+    .analytics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; max-width: 1200px; margin: 0 auto; }
+    .analytics-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 24px; text-align: center; }
+    .analytics-card .number { font-size: 2rem; font-weight: 700; color: #4ea8ff; }
+    .analytics-card .label { font-size: 0.85rem; color: rgba(255,255,255,0.5); margin-top: 4px; text-transform: uppercase; letter-spacing: 1px; }
+    .analytics-card .rate { font-size: 1.2rem; color: #4caf50; margin-top: 8px; }
+    .analytics-title { text-align: center; font-size: 1.8rem; font-weight: 700; margin-bottom: 32px; color: #fff; }
+    @media (max-width: 768px) {
+        .lead-form-row { flex-direction: column; }
+        .analytics-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
     .cta-section {
       padding: 110px 0;
       text-align: center;
@@ -1639,18 +1681,42 @@
   </section>
 
   <!-- CTA SECTION -->
-  <section class="cta-section">
-    <div class="container">
+    <section class="cta-section" id="anmelden">
       <div class="cta-box">
         <h2 class="cta-title">Bereit, Ihr Geschäft zu skalieren?</h2>
         <p class="cta-desc">Starten Sie jetzt in unter 30 Sekunden — 7 Tage kostenlos testen, danach Paket wählen.</p>
-        <button onclick="startCheckout('7-Tage Testversion', '0.00')" class="btn btn-primary" style="padding: 18px 36px; font-size: 1.1rem;">
-          7 Tage kostenlos testen
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-        </button>
+        
+        <!-- LEAD CAPTURE FORM -->
+        <form class="lead-form" id="leadCaptureForm" onsubmit="return submitLead(event)">
+          <div class="lead-form-row">
+            <input type="text" name="name" placeholder="Ihr Name" required>
+            <input type="email" name="email" placeholder="Geschäfts-E-Mail" required>
+          </div>
+          <div class="lead-form-row">
+            <input type="text" name="company" placeholder="Firma (optional)">
+            <input type="tel" name="phone" placeholder="Telefon (optional)">
+          </div>
+          <textarea name="message" placeholder="Was möchten Sie automatisieren? (optional)"></textarea>
+          <button type="submit" id="leadSubmitBtn">⚡ 7 Tage kostenlos starten</button>
+        </form>
+        <div class="lead-form-success" id="leadSuccess">
+          ✅ Erfolgreich registriert! Prüfen Sie Ihr Postfach — wir haben Ihnen eine Bestätigungs-E-Mail gesendet.
+        </div>
       </div>
-    </div>
-  </section>
+    </section>
+
+    <!-- CAMPAIGN ANALYTICS SECTION -->
+    <section class="analytics-section">
+      <h2 class="analytics-title">Live-Kampagnen-Dashboard</h2>
+      <div class="analytics-grid" id="analyticsGrid">
+        <div class="analytics-card"><div class="number" id="statSent">0</div><div class="label">Mails gesendet</div></div>
+        <div class="analytics-card"><div class="number" id="statResponses">0</div><div class="label">Antworten</div></div>
+        <div class="analytics-card"><div class="number" id="statLeads">0</div><div class="label">Leads erfasst</div></div>
+        <div class="analytics-card"><div class="number" id="statConverted">0</div><div class="label">Konvertiert</div></div>
+        <div class="analytics-card"><div class="rate" id="statResponseRate">0%</div><div class="label">Response-Rate</div></div>
+        <div class="analytics-card"><div class="rate" id="statConversionRate">0%</div><div class="label">Conversion-Rate</div></div>
+      </div>
+    </section>
 
   <!-- FOOTER -->
   <footer class="footer">
@@ -2149,7 +2215,75 @@ try {
   if (saved && translations[saved]) { setLang(saved); }
 } catch(e) {}
 
-  </script>
+  
+// ============================================================
+// LEAD CAPTURE FORM
+// ============================================================
+async function submitLead(event) {
+  event.preventDefault();
+  const form = event.target;
+  const btn = document.getElementById('leadSubmitBtn');
+  const success = document.getElementById('leadSuccess');
+  
+  btn.disabled = true;
+  btn.textContent = 'Wird gesendet...';
+  
+  const data = {
+    name: form.name.value,
+    email: form.email.value,
+    company: form.company.value,
+    phone: form.phone.value,
+    message: form.message.value
+  };
+  
+  try {
+    const res = await fetch('/api/revenue/leads/capture', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(data)
+    });
+    const result = await res.json();
+    
+    if (result.status === 'captured') {
+      form.style.display = 'none';
+      success.classList.add('show');
+      if (result.score) {
+        success.innerHTML += '<div class="lead-score-badge">Lead-Score: ' + result.score + '/10</div>';
+      }
+    } else if (result.status === 'exists') {
+      success.classList.add('show');
+      success.innerHTML = '✅ Sie sind bereits registriert! Prüfen Sie Ihr Postfach.';
+    }
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = 'Erneut versuchen';
+  }
+  return false;
+}
+
+// ============================================================
+// CAMPAIGN ANALYTICS — Live Dashboard
+// ============================================================
+async function loadAnalytics() {
+  try {
+    const res = await fetch('/api/revenue/campaigns/analytics');
+    const data = await res.json();
+    
+    document.getElementById('statSent').textContent = data.total_outreach_sent || 0;
+    document.getElementById('statResponses').textContent = data.total_responses || 0;
+    document.getElementById('statLeads').textContent = data.total_leads_captured || 0;
+    document.getElementById('statConverted').textContent = data.total_converted || 0;
+    document.getElementById('statResponseRate').textContent = (data.response_rate_pct || 0) + '%';
+    document.getElementById('statConversionRate').textContent = (data.conversion_rate_pct || 0) + '%';
+  } catch(e) {
+    console.log('Analytics noch nicht verfügbar');
+  }
+}
+
+// Load analytics on page load + refresh every 60s
+loadAnalytics();
+setInterval(loadAnalytics, 60000);
+</script>
 </body>
 </html>
 <!-- Trigger deploy Sun Aug 30 10:35:48 UTC 2026 -->
