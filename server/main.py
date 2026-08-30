@@ -118,7 +118,7 @@ learning_knowledge: List[Dict] = []
 audit_logs: List[Dict] = []
 tenants: Dict[str, dict] = {}
 
-current_version: str = "32.0.0"
+current_version: str = "33.0.0"
 
 # ===== TOKEN SAVER SYSTEM (NEW) =====
 class TokenSaver:
@@ -2216,12 +2216,37 @@ class AutonomousMarketingEngine:
         "Norwegen Brønnøysund (API + Web-Scrape)": [
             {"company": "Andreassen Digital", "email": "kontakt@adigital.no", "website": "https://adigital.no", "city": "Kirkenes, NO"},
             {"company": "Digital Innlandet", "email": "kontakt@digitalinnlandet.no", "website": "https://digitalinnlandet.no", "city": "Gjøvik, NO"},
-            {"company": "Abbas Consulting", "email": "post@proffregnskap.no", "website": "https://proffregnskap.no", "city": "NO"},
-            {"company": "Batalden Data", "email": "kontakt@fjellserver.no", "website": "https://fjellserver.no", "city": "NO"},
-            {"company": "Dombestein Data", "email": "isak@dombesteindata.net", "website": "https://dombesteindata.net", "city": "NO"},
-            {"company": "Kultorp Data", "email": "post@kultorp.no", "website": "https://kultorp.no", "city": "NO"},
-            {"company": "ALM Media", "email": "post@almmedia.no", "website": "https://almmedia.no", "city": "NO"},
-            {"company": "Askjem Media", "email": "post@vigdisaskjem.no", "website": "https://vigdisaskjem.no", "city": "NO"},
+            {"company": "Abbas Consulting", "email": "post@proffregnskap.no", "website": "https://proffregnskap.no", "city": "Oslo, NO"},
+            {"company": "Batalden Data", "email": "kontakt@fjellserver.no", "website": "https://fjellserver.no", "city": "Bergen, NO"},
+            {"company": "Dombestein Data", "email": "isak@dombesteindata.net", "website": "https://dombesteindata.net", "city": "Bergen, NO"},
+            {"company": "Kultorp Data", "email": "post@kultorp.no", "website": "https://kultorp.no", "city": "Kodal, NO"},
+            {"company": "ALM Media", "email": "post@almmedia.no", "website": "https://almmedia.no", "city": "Oslo, NO"},
+            {"company": "Askjem Media", "email": "post@vigdisaskjem.no", "website": "https://vigdisaskjem.no", "city": "Tønsberg, NO"},
+            {"company": "Ahmadi Web", "email": "contact@ahmadiweb.com", "website": "https://ahmadiweb.com", "city": "Kristiansand, NO"},
+            {"company": "Kolsrud Web", "email": "post@kolsrudweb.no", "website": "https://kolsrudweb.no", "city": "Drammen, NO"},
+            {"company": "Hjelme Web", "email": "erlend@hjelmeweb.no", "website": "https://hjelmeweb.no", "city": "Valldal, NO"},
+            {"company": "Nygård Web", "email": "post@nygardweb.no", "website": "https://nygardweb.no", "city": "Slemmestad, NO"},
+            {"company": "Active Web", "email": "hostmaster@activeweb.no", "website": "https://activeweb.no", "city": "Hyggen, NO"},
+            {"company": "Dagstad Web", "email": "info@dagstadweb.no", "website": "https://dagstadweb.no", "city": "Greåker, NO"},
+            {"company": "Online Group", "email": "post@onlinegroup.no", "website": "https://onlinegroup.no", "city": "Bergen, NO"},
+            {"company": "Iversen Online", "email": "post@iversenonline.no", "website": "https://iversenonline.no", "city": "Ranheim, NO"},
+            {"company": "Online Partner", "email": "sales@onlinepartner.se", "website": "https://onlinepartner.no", "city": "Oslo, NO"},
+            {"company": "Hagen Agency", "email": "hagency@online.no", "website": "https://hagenagency.no", "city": "Oslo, NO"},
+            {"company": "Astrum Agency", "email": "simon@astrumagency.com", "website": "https://astrumagency.com", "city": "Kristiansand, NO"},
+            {"company": "Actsporty Agency", "email": "kontakt@actsporty.no", "website": "https://actsporty.no", "city": "Oslo, NO"},
+            {"company": "Brightmedia Agency", "email": "info@brightmedia.se", "website": "https://brightmedia.se", "city": "Göteborg, SE"},
+            {"company": "Cloud Connection", "email": "nora.gausel@cloudconnection.no", "website": "https://cloudconnection.no", "city": "Oslo, NO"},
+            {"company": "Bjørnådal Cloud", "email": "daniel@bjornadal.no", "website": "https://bjornadal.no", "city": "Mo i Rana, NO"},
+            {"company": "Arribatec Cloud", "email": "erik.helgaker@arribatec.com", "website": "https://innit.no", "city": "Hamar, NO"},
+            {"company": "Cloud Security Alliance NO", "email": "info-chapter@csachapter.io", "website": "https://cloudsecurityalliance.no", "city": "Oslo, NO"},
+            {"company": "Cloud Solutions", "email": "hei@cloudsolutions.no", "website": "https://cloudsolutions.no", "city": "Oslo, NO"},
+            {"company": "Cloud Networks Nordic", "email": "support@thecloud.eu", "website": "https://thecloud.eu", "city": "Stockholm, SE"},
+            {"company": "Cloud People", "email": "invoice@thecloudpeople.com", "website": "https://thecloudpeople.com", "city": "Oslo, NO"},
+            {"company": "Appear ASA", "email": "info@appear.net", "website": "https://appear.net", "city": "Oslo, NO"},
+            {"company": "Apparat", "email": "hei@apparat.no", "website": "https://apparat.no", "city": "Bergen, NO"},
+            {"company": "Appel Inspection", "email": "jan@appel-inspection.de", "website": "https://appel-inspection.de", "city": "DE"},
+            {"company": "Andresen Design", "email": "marius@andresen-design.no", "website": "https://andresen-design.no", "city": "Lonevåg, NO"},
+            {"company": "Bjørnstad Design", "email": "line@bjornstaddesign.no", "website": "https://bjornstaddesign.no", "city": "Hommersåk, NO"},
         ],
     }
     
