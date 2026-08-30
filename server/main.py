@@ -118,7 +118,7 @@ learning_knowledge: List[Dict] = []
 audit_logs: List[Dict] = []
 tenants: Dict[str, dict] = {}
 
-current_version: str = "28.0.0"
+current_version: str = "29.0.0"
 
 # ===== TOKEN SAVER SYSTEM (NEW) =====
 class TokenSaver:
@@ -2176,6 +2176,21 @@ class AutonomousMarketingEngine:
             {"company": "Schweitzer Spedition", "email": "info@schweitzer-spedition.de", "website": "https://www.schweitzer-spedition.de", "city": "Kornwestheim"},
             {"company": "Keitel Spedition", "email": "info@keitel-spedition.de", "website": "https://www.keitel-spedition.de", "city": "Geslau"},
             {"company": "Gödecke Logistik", "email": "service@goedecke-logistik.de", "website": "https://www.goedecke-logistik.de", "city": "Lübeck"},
+        ],
+        "SaaS & Startups III (gescrapet)": [
+            {"company": "Ventr SaaS", "email": "info@ventr.de", "website": "https://ventr.de", "city": "Hannover"},
+            {"company": "Cloudkleyer SaaS", "email": "contact@cloudkleyer.de", "website": "https://www.cloudkleyer.de", "city": "Frankfurt"},
+            {"company": "MenüQR SaaS", "email": "support@menueqr.de", "website": "https://www.menueqr.de", "city": "Deutschland"},
+        ],
+        "Bau & Handwerk III (gescrapet)": [
+            {"company": "OpenHandwerk", "email": "info@openhandwerk.de", "website": "https://openhandwerk.de", "city": "Berlin"},
+            {"company": "Lippe Bau", "email": "info@lippe-bau-gmbh.de", "website": "https://lippe-bau-gmbh.de", "city": "Deutschland"},
+            {"company": "Obermann Bauunternehmen", "email": "obermann.gmbh@web.de", "website": "https://www.bauunternehmen-obermann.de", "city": "Bielefeld"},
+        ],
+        "International II (gescrapet)": [
+            {"company": "Become Denmark", "email": "info@become.dk", "website": "https://www.become.dk", "city": "Kopenhagen, DK"},
+            {"company": "Gateway Digital NL", "email": "connect@thegatewaydigital.com", "website": "https://www.thegatewaydigital.com", "city": "Niederlande"},
+            {"company": "R17 Ventures", "email": "sales@r17ventures.com", "website": "https://r17ventures.com", "city": "Schweiz/Dänemark"},
         ],
     }
     
