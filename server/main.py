@@ -118,7 +118,7 @@ learning_knowledge: List[Dict] = []
 audit_logs: List[Dict] = []
 tenants: Dict[str, dict] = {}
 
-current_version: str = "27.1.0"
+current_version: str = "28.0.0"
 
 # ===== TOKEN SAVER SYSTEM (NEW) =====
 class TokenSaver:
@@ -2148,6 +2148,34 @@ class AutonomousMarketingEngine:
             {"company": "Webvory India", "email": "hello@webvory.com", "website": "https://webvory.com", "city": "Mohali, IN"},
             {"company": "Indian SEO Agency", "email": "sales@indianseoagency.com", "website": "https://indianseoagency.com", "city": "Indien"},
             {"company": "Brandchanakya", "email": "info@brandchanakya.in", "website": "https://brandchanakya.in", "city": "Indien"},
+        ],
+        "Digitalagenturen Deutschland II (gescraped)": [
+            {"company": "Friendventure", "email": "hallo@friendventure.de", "website": "https://www.friendventure.de", "city": "Köln"},
+            {"company": "Dreikon Digital", "email": "info@dreikon.de", "website": "https://www.dreikon.de", "city": "Köln/Leipzig/Stuttgart"},
+            {"company": "Komenci Digital", "email": "info@komenci.de", "website": "https://komenci.de", "city": "Stuttgart/Ulm"},
+            {"company": "Econsor Digital", "email": "info@econsor.de", "website": "https://www.econsor.de", "city": "Köln"},
+            {"company": "Protec Net", "email": "info@protec-net.de", "website": "https://www.protec-net.de", "city": "Braunschweig"},
+        ],
+        "Steuerberater II (gescraped)": [
+            {"company": "Kanzlei Pfalz", "email": "info@kanzlei-pfalz.de", "website": "https://kanzlei-pfalz.de", "city": "Ludwigshafen"},
+            {"company": "Kanzlei Mayer", "email": "info@kanzlei-mayer.de", "website": "https://kanzlei-mayer.de", "city": "Singen"},
+            {"company": "Ludwig Kollegen", "email": "mail@ludwig-kollegen.de", "website": "https://www.ludwig-kollegen.de", "city": "Mainz"},
+            {"company": "BRB Appel & Partner", "email": "kanzlei@brbgruppe.de", "website": "https://brbgruppe.de", "city": "Hamburg"},
+            {"company": "Jacobsen Confurius", "email": "info@jacobsen-confurius.de", "website": "https://jacobsen-confurius.de", "city": "Berlin"},
+        ],
+        "Immobilien II (gescrapet)": [
+            {"company": "EUG Immobilien", "email": "info@eug-re.de", "website": "https://en.eug-immobilien.de", "city": "Stuttgart"},
+            {"company": "Watermann Immobilien", "email": "info@watermann-immobilien.de", "website": "https://www.watermann-immobilien.de", "city": "Deutschland"},
+            {"company": "Schürrer & Fleischer", "email": "info@schuerrer-fleischer.de", "website": "https://www.schuerrer-fleischer.de", "city": "Deutschland"},
+            {"company": "Examina Immobilien", "email": "info@examina-immobilien.de", "website": "https://www.examina-immobilien.de", "city": "Flensburg"},
+        ],
+        "Logistik II (gescrapet)": [
+            {"company": "Sostmeier Logistik", "email": "info@sostmeier.de", "website": "https://www.sostmeier.de", "city": "Deutschland"},
+            {"company": "Neptun Services", "email": "info@neptun-services.de", "website": "https://www.neptun-services.de", "city": "Bielefeld"},
+            {"company": "Emons Spedition", "email": "zentrale@emons.de", "website": "https://www.emons.de", "city": "Köln"},
+            {"company": "Schweitzer Spedition", "email": "info@schweitzer-spedition.de", "website": "https://www.schweitzer-spedition.de", "city": "Kornwestheim"},
+            {"company": "Keitel Spedition", "email": "info@keitel-spedition.de", "website": "https://www.keitel-spedition.de", "city": "Geslau"},
+            {"company": "Gödecke Logistik", "email": "service@goedecke-logistik.de", "website": "https://www.goedecke-logistik.de", "city": "Lübeck"},
         ],
     }
     
