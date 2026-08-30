@@ -775,6 +775,8 @@ async def health_check():
         "level": TreasuryWalletEngine.current_level.value,
         "primary_active_region": time_info["primary_active_region"],
         "groq_connected": bool(GROQ_API_KEY),
+        "email_configured": bool(SMTP_PASSWORD),
+        "bot_email": SMTP_USER,
         "keep_alive": KeepAliveSystem.is_running,
         "token_stats": TokenSaver.get_stats()
     }
@@ -1213,6 +1215,60 @@ Sitemap: {base}/sitemap.xml
 """
     return HTMLResponse(content=txt, media_type="text/plain")
 
+
+# ===== EMAIL API ENDPOINTS =====
+
+@router.get("/email/status")
+async def email_status():
+    """Status der Email-Engine."""
+    return EmailEngine.get_status()
+
+@router.get("/email/inbox")
+async def email_inbox(limit: int = 50):
+    """Alle eingehenden Emails."""
+    return EmailEngine.inbox[:limit]
+
+@router.get("/email/sent")
+async def email_sent(limit: int = 50):
+    """Alle gesendeten Emails."""
+    return EmailEngine.sent[:limit]
+
+@router.post("/email/send")
+async def email_send(req: dict):
+    """Email senden (Bot-Versand)."""
+    to = req.get("to", "")
+    subject = req.get("subject", "")
+    body = req.get("body", "")
+    bot_name = req.get("bot_name", "RevenueAgentRoute")
+    
+    if not to or not subject or not body:
+        return {"status": "error", "message": "to, subject, body erforderlich"}
+    
+    return await EmailEngine.send_email(to, subject, body, bot_name=bot_name)
+
+@router.post("/email/receive")
+async def email_receive(req: dict):
+    """Empfaengt eine Email (Webhook fuer Gmail Forwarding)."""
+    sender = req.get("from", "")
+    subject = req.get("subject", "")
+    body = req.get("body", "")
+    
+    if not sender or not subject:
+        return {"status": "error", "message": "from, subject erforderlich"}
+    
+    return await EmailEngine.distribute_incoming(sender, subject, body)
+
+@router.post("/email/cold-outreach")
+async def email_cold_outreach(req: dict):
+    """Sendet Cold-Emails aus dem Marketing-Pool."""
+    to = req.get("to", "")
+    industry = req.get("industry", "B2B")
+    
+    if not to:
+        return {"status": "error", "message": "to erforderlich"}
+    
+    return await EmailEngine.send_cold_email(to, industry)
+
 # ===== MARKETING API ENDPOINTS =====
 
 @router.get("/marketing/status")
@@ -1264,6 +1320,154 @@ async def marketing_trigger():
 
 # ================================================================
 # AUTONOMOUS MARKETING ENGINE — Bots werben autonom im Web
+# ================================================================
+
+
+# ===== EMAIL/SMTP CONFIG =====
+SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
+SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+SMTP_USER = os.getenv("SMTP_USER", "revenue.agent.route@gmail.com")
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
+BOT_EMAIL = SMTP_USER  # Central bot email address
+
+# ===== EMAIL ENGINE =====
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+import email as email_lib
+
+class EmailEngine:
+    """Zentrale Email-Engine fuer alle 71 Bots."""
+    
+    inbox: List[Dict] = []
+    sent: List[Dict] = []
+    is_configured: bool = bool(SMTP_PASSWORD)
+    
+    @classmethod
+    async def send_email(cls, to: str, subject: str, body: str, bot_name: str = "RevenueAgentRoute") -> Dict:
+        """Sendet eine Email ueber SMTP."""
+        if not cls.is_configured:
+            logger.warning(f"SMTP nicht konfiguriert — Email an {to} nicht gesendet")
+            return {"status": "error", "message": "SMTP_PASSWORD nicht gesetzt in Railway"}
+        
+        try:
+            msg = MIMEMultipart("alternative")
+            msg["From"] = f"{bot_name} <{SMTP_USER}>"
+            msg["To"] = to
+            msg["Subject"] = subject
+            
+            # Plain text + HTML
+            msg.attach(MIMEText(body, "plain", "utf-8"))
+            html_body = f"<html><body style='font-family:sans-serif;line-height:1.6;color:#333'><div style='max-width:600px;margin:0 auto;padding:20px'><h2 style='color:#1a3a5c'>{subject}</h2><div>{body.replace(chr(10),'<br>')}</div><hr style='border:none;border-top:1px solid #eee;margin:20px 0'><p style='color:#999;font-size:12px'>Gesendet von RevenueAgentRoute — 71 KI-Agenten arbeiten 24/7 fuer Sie.<br>Diese Email wurde automatisch von Bot '{bot_name}' generiert.</p></div></body></html>"
+            msg.attach(MIMEText(html_body, "html", "utf-8"))
+            
+            # Send via SMTP
+            server = smtplib.SMTP(SMTP_HOST, SMTP_PORT)
+            server.starttls()
+            server.login(SMTP_USER, SMTP_PASSWORD)
+            server.sendmail(SMTP_USER, to, msg.as_string())
+            server.quit()
+            
+            sent_email = {
+                "id": f"sent_{uuid.uuid4().hex[:8]}",
+                "to": to,
+                "subject": subject,
+                "body": body[:500],
+                "bot": bot_name,
+                "status": "sent",
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }
+            cls.sent.append(sent_email)
+            logger.info(f"Email gesendet an {to} von Bot {bot_name}")
+            return {"status": "sent", "to": to, "subject": subject}
+            
+        except Exception as e:
+            logger.error(f"SMTP Fehler: {e}")
+            return {"status": "error", "message": str(e)}
+    
+    @classmethod
+    async def send_cold_email(cls, to: str, industry: str) -> Dict:
+        """Sendet eine Cold-Email aus dem Marketing-Engine Pool."""
+        # Get latest cold email template for this industry
+        templates = [e for e in AutonomousMarketingEngine.cold_emails if industry.lower() in e.get("target_industry","").lower()]
+        if not templates:
+            templates = AutonomousMarketingEngine.cold_emails
+        
+        if not templates:
+            return {"status": "error", "message": "Keine Cold-Email-Templates verfuegbar"}
+        
+        template = templates[-1]
+        body = template.get("content", "")
+        subject_line = f"71 KI-Agenten fuer {industry} — 7 Tage kostenlos testen"
+        
+        return await cls.send_email(to, subject_line, body, bot_name="cold_outreach_leadgen")
+    
+    @classmethod
+    async def distribute_incoming(cls, sender: str, subject: str, body: str) -> Dict:
+        """Verteilt eingehende Emails an die richtigen Bots."""
+        # Routing logic based on subject/content
+        subject_lower = subject.lower()
+        body_lower = body.lower()
+        
+        assigned_bot = "general_inquiry"
+        priority = "normal"
+        
+        # Keyword-based routing
+        if any(k in subject_lower for k in ["rechnung", "invoice", "payment", "zahlung", "stripe"]):
+            assigned_bot = "billing_payment_bot"
+            priority = "high"
+        elif any(k in subject_lower for k in ["lead", "kunde", "customer", "anfrage"]):
+            assigned_bot = "cold_outreach_leadgen"
+        elif any(k in subject_lower for k in ["seo", "content", "artikel", "blog"]):
+            assigned_bot = "programmatic_content_seo"
+        elif any(k in subject_lower for k in ["bug", "fehler", "problem", "support"]):
+            assigned_bot = "saas_uptime_monitoring"
+            priority = "high"
+        elif any(k in subject_lower for k in["bank", "konto", "transfer", "iban"]):
+            assigned_bot = "billing_payment_bot"
+            priority = "urgent"
+        elif any(k in subject_lower for k in["marketing", "werbung", "ad", "social"]):
+            assigned_bot = "social_reputation_mgmt"
+        
+        email_record = {
+            "id": f"inbox_{uuid.uuid4().hex[:8]}",
+            "from": sender,
+            "subject": subject,
+            "body": body[:1000],
+            "assigned_bot": assigned_bot,
+            "priority": priority,
+            "status": "received",
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+        cls.inbox.append(email_record)
+        
+        # Auto-respond
+        auto_reply = f"""Hallo,
+
+vielen Dank fuer Ihre Email an RevenueAgentRoute!
+
+Ihre Anfrage wurde automatisch an Bot '{assigned_bot}' weitergeleitet (Prioritaet: {priority}).
+Ein KI-Agent wird sich innerhalb von 24 Stunden mit einer Antwort melden.
+
+-- RevenueAgentRoute
+71 KI-Agenten. 24/7 aktiv.
+revenue.agent.route@gmail.com"""
+        
+        await cls.send_email(sender, f"Re: {subject}", auto_reply, bot_name=assigned_bot)
+        
+        return {"status": "distributed", "assigned_bot": assigned_bot, "priority": priority}
+    
+    @classmethod
+    def get_status(cls) -> Dict:
+        return {
+            "configured": cls.is_configured,
+            "email": SMTP_USER,
+            "inbox_count": len(cls.inbox),
+            "sent_count": len(cls.sent),
+            "smtp_host": SMTP_HOST,
+            "smtp_port": SMTP_PORT
+        }
+
 # ================================================================
 
 class AutonomousMarketingEngine:
