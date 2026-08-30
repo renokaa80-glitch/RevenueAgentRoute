@@ -378,6 +378,7 @@ class AgentTyp(str, Enum):
     PAY_PER_CALL_ARBITRAGE = "pay_per_call_arbitrage"
     CART_RECOVERY_WINBACK = "cart_recovery_winback"
     GEO_KNOWLEDGE_GRAPH_ENTRY = "geo_knowledge_graph_entry"
+    WEB_TESTING_LEGACY_EXTRACTION = "web_testing_legacy_extraction"
 
 class GlobalTimezoneEngine:
     @staticmethod

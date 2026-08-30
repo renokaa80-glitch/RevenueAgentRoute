@@ -245,7 +245,7 @@ class TreasuryWalletEngine:
             cls.current_level = SystemLevel.LEVEL_2
         logger.info(f"Level: {cls.current_level.value}")
 
-# ===== AGENT TYPES (70) =====
+# ===== AGENT TYPES (71) =====
 class AgentTyp(str, Enum):
     COLD_OUTREACH = "cold_outreach_leadgen"
     SEO_AUDIT = "seo_audit_repair"
@@ -317,6 +317,7 @@ class AgentTyp(str, Enum):
     PAY_PER_CALL_ARBITRAGE = "pay_per_call_arbitrage"
     CART_RECOVERY_WINBACK = "cart_recovery_winback"
     GEO_KNOWLEDGE_GRAPH_ENTRY = "geo_knowledge_graph_entry"
+    WEB_TESTING_LEGACY_EXTRACTION = "web_testing_legacy_extraction"
 
 # ===== GLOBAL TIMEZONE ENGINE =====
 class GlobalTimezoneEngine:
