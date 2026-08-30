@@ -345,8 +345,8 @@ class GlobalTimezoneEngine:
 # ===== SMART AI ROUTER (WITH TOKEN SAVER) =====
 class SmartAIRouter:
     if GROQ_API_KEY:
-        CHEAP_MODEL = "llama-3.1-8b-instant"
-        ADVANCED_MODEL = "llama-3.3-70b-versatile"
+        CHEAP_MODEL = "openai/gpt-oss-20b"
+        ADVANCED_MODEL = "openai/gpt-oss-120b"
     elif GEMINI_API_KEY:
         CHEAP_MODEL = "gemini-1.5-flash"
         ADVANCED_MODEL = "gemini-1.5-pro"
