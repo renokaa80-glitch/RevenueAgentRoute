@@ -118,7 +118,7 @@ learning_knowledge: List[Dict] = []
 audit_logs: List[Dict] = []
 tenants: Dict[str, dict] = {}
 
-current_version: str = "31.0.0"
+current_version: str = "32.0.0"
 
 # ===== TOKEN SAVER SYSTEM (NEW) =====
 class TokenSaver:
@@ -2203,6 +2203,25 @@ class AutonomousMarketingEngine:
             {"company": "Digivizer", "email": "info@digivizer.com", "website": "https://digivizer.com", "city": "Irland"},
             {"company": "Linemark", "email": "solutions@linemark.com", "website": "https://linemark.com", "city": "Irland"},
             {"company": "Neworld IE", "email": "digital@neworld.com", "website": "https://neworld.ie", "city": "Irland"},
+        ],
+        "Daenemark CVR API (direkt Email)": [
+            {"company": "Digital Eksperten", "email": "info@deksp.dk", "website": "https://deksp.dk", "city": "Rødovre, DK"},
+            {"company": "Marketing Copenhagen", "email": "info@marketing-copenhagen.dk", "website": "", "city": "Kopenhagen, DK"},
+            {"company": "Edora Software", "email": "mh@workforce-planner.dk", "website": "https://workforce-planner.dk", "city": "DK"},
+            {"company": "Security Agency", "email": "kandemir@sc-ag.dk", "website": "https://sc-ag.dk", "city": "DK"},
+            {"company": "Data Vision", "email": "info@data-vision.dk", "website": "https://data-vision.dk", "city": "DK"},
+            {"company": "Cloud Factory", "email": "mail@cloudfactory.dk", "website": "https://cloudfactory.dk", "city": "DK"},
+            {"company": "Cyber Partners", "email": "info@cyberpartners.dk", "website": "https://cyberpartners.dk", "city": "DK"},
+        ],
+        "Norwegen Brønnøysund (API + Web-Scrape)": [
+            {"company": "Andreassen Digital", "email": "kontakt@adigital.no", "website": "https://adigital.no", "city": "Kirkenes, NO"},
+            {"company": "Digital Innlandet", "email": "kontakt@digitalinnlandet.no", "website": "https://digitalinnlandet.no", "city": "Gjøvik, NO"},
+            {"company": "Abbas Consulting", "email": "post@proffregnskap.no", "website": "https://proffregnskap.no", "city": "NO"},
+            {"company": "Batalden Data", "email": "kontakt@fjellserver.no", "website": "https://fjellserver.no", "city": "NO"},
+            {"company": "Dombestein Data", "email": "isak@dombesteindata.net", "website": "https://dombesteindata.net", "city": "NO"},
+            {"company": "Kultorp Data", "email": "post@kultorp.no", "website": "https://kultorp.no", "city": "NO"},
+            {"company": "ALM Media", "email": "post@almmedia.no", "website": "https://almmedia.no", "city": "NO"},
+            {"company": "Askjem Media", "email": "post@vigdisaskjem.no", "website": "https://vigdisaskjem.no", "city": "NO"},
         ],
     }
     
