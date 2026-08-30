@@ -1494,6 +1494,11 @@ class AutonomousMarketingEngine:
     is_running: bool = False
     last_run: Optional[datetime] = None
     total_campaigns: int = 0
+    # Autonomous Cold Outreach tracking
+    outreach_sent: List[Dict] = []
+    outreach_targets: List[Dict] = []
+    outreach_enabled: bool = True
+    max_emails_per_cycle: int = 10
     
     # Marketing-fähige Bots
     MARKETING_BOTS = [
@@ -1522,6 +1527,9 @@ class AutonomousMarketingEngine:
                 
                 # 3. Cold-Email-Sequenz generieren
                 await cls._generate_cold_emails()
+                
+                # 3.5 AUTONOMOUS COLD OUTREACH — findet Kunden und sendet Mails
+                await cls._autonomous_cold_outreach()
                 
                 # 4. Directory-Listing erstellen
                 await cls._generate_directory_listing()
@@ -1643,6 +1651,143 @@ class AutonomousMarketingEngine:
         cls.cold_emails.append(email)
         cls.marketing_content.append(email)
         return email
+    
+    @classmethod
+    async def _autonomous_cold_outreach(cls):
+        """Findet automatisch B2B-Kunden und sendet Cold-Emails."""
+        if not cls.outreach_enabled:
+            return
+        
+        if not EmailEngine.is_configured:
+            logger.warning("Outreach: SMTP nicht konfiguriert — ueberspringe")
+            return
+        
+        industries = [
+            "Digitalagenturen in DACH", "SaaS-Startups in Europa",
+            "KMU mit Legacy-Systemen", "E-Commerce-Unternehmen",
+            "Logistikunternehmen", "Immobilienmakler",
+            "Steuerberater und Kanzleien", "Handwerksbetriebe"
+        ]
+        industry = industries[cls.total_campaigns % len(industries)]
+        
+        # Step 1: AI finds potential target companies + emails
+        prospect_prompt = f"""Finde 5 reale B2B-Unternehmen aus '{industry}' die KI-Automatisierung brauchen.
+        Format pro Zeile (genau so):
+        Firmenname | Kontakt-Email | kurzer Grund warum sie KI brauchen
+        
+        Nutze reale Firmen und echte Webseiten-Emails (info@, kontakt@, hallo@).
+        Keine erfundenen Adressen."""
+        
+        try:
+            prospect_result = await SmartAIRouter.call_llm_efficient(prospect_prompt, "lead_generation")
+        except Exception as e:
+            logger.error(f"Outreach: Lead-Generierung fehlgeschlagen: {e}")
+            return
+        
+        # Parse prospects
+        prospects = []
+        for line in prospect_result.strip().split("\n"):
+            parts = [p.strip() for p in line.split("|")]
+            if len(parts) >= 2 and "@" in parts[1]:
+                prospects.append({
+                    "company": parts[0],
+                    "email": parts[1].strip(),
+                    "reason": parts[2] if len(parts) > 2 else "KI-Automatisierung",
+                    "industry": industry
+                })
+        
+        if not prospects:
+            logger.warning(f"Outreach: Keine gueltigen Prospects fuer {industry} gefunden")
+            return
+        
+        # Limit per cycle
+        prospects = prospects[:cls.max_emails_per_cycle]
+        cls.outreach_targets.extend(prospects)
+        
+        # Step 2: Generate + send personalized email for each prospect
+        sent_count = 0
+        for prospect in prospects:
+            company = prospect["company"]
+            email_addr = prospect["email"]
+            reason = prospect["reason"]
+            
+            # Skip if already contacted
+            if any(s.get("to") == email_addr for s in cls.outreach_sent):
+                logger.info(f"Outreach: {email_addr} bereits kontaktiert — ueberspringe")
+                continue
+            
+            # Generate personalized email
+            personal_prompt = f"""Schreibe eine personalisierte Cold-Email an {company}.
+            Grund warum sie KI brauchen: {reason}
+            
+            Betreff: Personalisiert fuer {company}, neugierig machend, max 60 Zeichen.
+            Body: 4 Sätze. 
+            1. Spezifisches Problem von {company} erkennen.
+            2. Loesung: 71 KI-Agenten die 24/7 arbeiten — Lead Gen, SEO, Content, Outreach.
+            3. Referenz: Microsoft und JPMorgan setzen KI-Agenten ein.
+            4. CTA: 7 Tage kostenlos testen, keine Kreditkarte.
+            PS: Keine Kreditkarte erforderlich.
+            Sprache: Deutsch. Professional aber freundlich."""
+            
+            try:
+                email_content = await SmartAIRouter.call_llm_efficient(personal_prompt, "cold_outreach_leadgen")
+            except Exception as e:
+                logger.error(f"Outreach: Email-Generierung fuer {company} fehlgeschlagen: {e}")
+                continue
+            
+            # Extract subject and body from generated content
+            lines = email_content.strip().split("\n")
+            subject = lines[0].replace("Betreff:", "").replace("Subject:", "").strip()
+            body = "\n".join(lines[1:]).strip()
+            if not subject:
+                subject = f"KI-Agenten fuer {company} — 7 Tage kostenlos"
+            if not body:
+                body = email_content
+            
+            # Send the email
+            result = await EmailEngine.send_email(
+                to=email_addr,
+                subject=subject,
+                body=body,
+                bot_name="cold_outreach_leadgen"
+            )
+            
+            outreach_record = {
+                "id": f"outreach_{uuid.uuid4().hex[:8]}",
+                "company": company,
+                "email": email_addr,
+                "industry": industry,
+                "subject": subject,
+                "status": result.get("status", "error"),
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }
+            cls.outreach_sent.append(outreach_record)
+            
+            if result.get("status") == "sent":
+                sent_count += 1
+                logger.info(f"Outreach: Cold-Email gesendet an {company} ({email_addr})")
+            
+            # Rate limit: 5 seconds between emails
+            await asyncio.sleep(5)
+        
+        logger.info(f"Outreach: Zyklus abgeschlossen — {sent_count} Mails an {industry} gesendet")
+        return {"sent": sent_count, "targets": len(prospects), "industry": industry}
+    
+    @classmethod
+    async def _autonomous_cold_outreach_manual(cls, industry: str):
+        """Manuelle Cold-Outreach fuer eine spezifische Branche."""
+        old_campaigns = cls.total_campaigns
+        industries = [
+            "Digitalagenturen in DACH", "SaaS-Startups in Europa",
+            "KMU mit Legacy-Systemen", "E-Commerce-Unternehmen",
+            "Logistikunternehmen", "Immobilienmakler",
+            "Steuerberater und Kanzleien", "Handwerksbetriebe"
+        ]
+        if industry in industries:
+            cls.total_campaigns = industries.index(industry)
+        result = await cls._autonomous_cold_outreach()
+        cls.total_campaigns = old_campaigns
+        return result
     
     @classmethod
     async def _generate_directory_listing(cls):
