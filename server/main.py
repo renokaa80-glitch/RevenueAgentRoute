@@ -118,7 +118,7 @@ learning_knowledge: List[Dict] = []
 audit_logs: List[Dict] = []
 tenants: Dict[str, dict] = {}
 
-current_version: str = "33.0.0"
+current_version: str = "34.0.0"
 
 # ===== TOKEN SAVER SYSTEM (NEW) =====
 class TokenSaver:
@@ -417,10 +417,11 @@ class SmartAIRouter:
                     for key, _ in oldest:
                         del semantic_response_cache[key]
                 return text
-            return f"API-Fehler: {res.status_code}"
+            logger.error(f"LLM API error: {res.status_code}")
+            return None  # Signal failure to caller
         except Exception as e:
             logger.error(f"LLM call failed: {type(e).__name__}")
-            return f"Fehler: {type(e).__name__}"
+            return None  # Signal failure to caller
 
 # ===== SELF EVOLUTION ENGINE =====
 B2BAgent = SmartAIRouter
@@ -2395,12 +2396,58 @@ class AutonomousMarketingEngine:
                 logger.error(f"Outreach: Email-Generierung fuer {company} fehlgeschlagen: {e}")
                 continue
             
+            # FALLBACK wenn API fehlgeschlagen (429, timeout, etc.)
+            if email_content is None or email_content.startswith("API-Fehler") or email_content.startswith("Fehler:"):
+                logger.warning(f"Outreach: API-Fehler fuer {company} — verwende Fallback-Email")
+                fallback_subjects = [
+                    f"Kurze Frage an {company}",
+                    f"KI für {company} — kurze Frage",
+                    f"{company}: Automatisierung für Ihre Prozesse",
+                    f"Kurze Frage zur Digitalisierung bei {company}",
+                    f"KI für {company} — 2 Minuten Ihrer Zeit?"
+                ]
+                import random as _rnd_fallback
+                subject = _rnd_fallback.choice(fallback_subjects)
+                body = f"Hallo,\n\nich habe mir {company} angesehen und eine Frage: Wie automatisieren Sie aktuell Ihre wiederkehrenden Prozesse?\n\nWir helfen Firmen wie Ihnen mit KI-gestützter Automatisierung – von Lead-Generierung bis Kundenkommunikation. Sparen Sie Zeit und Kosten, ohne neues Personal einzustellen.\n\nHätten Sie nächste Woche 15 Minuten für ein kurzes Gespräch?\n\nViele Grüße,\n{sender_name}"
+                
+                # Send fallback email
+                result = await EmailEngine.send_email(
+                    to=email_addr,
+                    subject=subject,
+                    body=body,
+                    bot_name="cold_outreach_leadgen"
+                )
+                
+                outreach_record = {
+                    "id": f"outreach_{uuid.uuid4().hex[:8]}",
+                    "company": company,
+                    "email": email_addr,
+                    "industry": industry,
+                    "subject": subject,
+                    "status": result.get("status", "error"),
+                    "timestamp": datetime.now(timezone.utc).isoformat()
+                }
+                cls.outreach_sent.append(outreach_record)
+                
+                if result.get("status") == "sent":
+                    sent_count += 1
+                    logger.info(f"Outreach: Fallback-Email gesendet an {company} ({email_addr})")
+                else:
+                    cls.bounced_emails.append({"email": email_addr, "company": company, "reason": result.get("message","")})
+                
+                import random as _rnd2b
+                human_delay = _rnd2b.randint(30, 90)
+                await asyncio.sleep(human_delay)
+                continue
+            
             # Extract subject and body from generated content
             lines = email_content.strip().split("\n")
             subject = lines[0].replace("Betreff:", "").replace("Subject:", "").strip()
             body = "\n".join(lines[1:]).strip()
-            if not subject:
-                subject = f"Kurze Frage an {company}"
+            if not subject or subject.startswith("API-Fehler") or subject.startswith("Fehler:"):
+                import random as _rnd_sub
+                fallback_subs = [f"Kurze Frage an {company}", f"KI für {company}", f"{company}: kurze Frage"]
+                subject = _rnd_sub.choice(fallback_subs)
             if not body:
                 body = email_content
             
@@ -2511,8 +2558,10 @@ class AutonomousMarketingEngine:
             lines = email_content.strip().split("\n")
             subject = lines[0].replace("Betreff:", "").replace("Subject:", "").strip()
             body = "\n".join(lines[1:]).strip()
-            if not subject:
-                subject = f"Kurze Frage an {company}"
+            if not subject or subject.startswith("API-Fehler") or subject.startswith("Fehler:"):
+                import random as _rnd_sub
+                fallback_subs = [f"Kurze Frage an {company}", f"KI für {company}", f"{company}: kurze Frage"]
+                subject = _rnd_sub.choice(fallback_subs)
             if not body:
                 body = email_content
             
