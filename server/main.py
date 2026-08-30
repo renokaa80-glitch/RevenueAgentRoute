@@ -118,7 +118,7 @@ learning_knowledge: List[Dict] = []
 audit_logs: List[Dict] = []
 tenants: Dict[str, dict] = {}
 
-current_version: str = "27.0.0"
+current_version: str = "27.1.0"
 
 # ===== TOKEN SAVER SYSTEM (NEW) =====
 class TokenSaver:
@@ -1863,6 +1863,39 @@ class AutonomousMarketingEngine:
     outreach_enabled: bool = True  # Aktiviert — 50 echte verifizierte Kontakte vorhanden
     max_emails_per_cycle: int = 10
     max_emails_per_day: int = 25  # Gmail safety limit — far below 500
+    _PERSIST_FILE = "/tmp/outreach_persist.json"
+    
+    @classmethod
+    def _save_outreach_data(cls):
+        """Speichert outreach Daten in JSON — ueberlebt Server-Neustarts."""
+        import json as _json
+        try:
+            data = {
+                "outreach_sent": cls.outreach_sent,
+                "bounced_emails": cls.bounced_emails,
+                "follow_up_sent": cls.follow_up_sent,
+                "saved_at": datetime.now(timezone.utc).isoformat()
+            }
+            with open(cls._PERSIST_FILE, "w") as f:
+                _json.dump(data, f, ensure_ascii=False)
+        except Exception as e:
+            logger.error(f"Persist save failed: {e}")
+    
+    @classmethod
+    def _load_outreach_data(cls):
+        """Laedt gespeicherte Outreach-Daten beim Server-Start."""
+        import json as _json
+        import os as _os
+        try:
+            if _os.path.exists(cls._PERSIST_FILE):
+                with open(cls._PERSIST_FILE, "r") as f:
+                    data = _json.load(f)
+                cls.outreach_sent = data.get("outreach_sent", [])
+                cls.bounced_emails = data.get("bounced_emails", [])
+                cls.follow_up_sent = data.get("follow_up_sent", [])
+                logger.info(f"Persist loaded: {len(cls.outreach_sent)} sent, {len(cls.bounced_emails)} bounced")
+        except Exception as e:
+            logger.error(f"Persist load failed: {e}")
     
     # Marketing-fähige Bots
     MARKETING_BOTS = [
