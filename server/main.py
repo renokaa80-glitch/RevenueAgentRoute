@@ -118,7 +118,7 @@ learning_knowledge: List[Dict] = []
 audit_logs: List[Dict] = []
 tenants: Dict[str, dict] = {}
 
-current_version: str = "24.2.0"
+current_version: str = "25.0.0"
 
 # ===== TOKEN SAVER SYSTEM (NEW) =====
 class TokenSaver:
@@ -1628,12 +1628,22 @@ async def list_industries():
 
 @router.post("/marketing/outreach/add-prospects")
 async def add_prospects(req: dict):
-    """Fuegt manuell gefundene, verifizierte Kontakte hinzu.
-    Reno kann hier echte Kontakte eintragen die er per Web-Suche oder LinkedIn gefunden hat."""
+    """Fuegt manuell gefundene, verifizierte Kontakte hinzu."""
     industry = req.get("industry", "Digitalagenturen in DACH")
     new_prospects = req.get("prospects", [])
     await AutonomousMarketingEngine._enrich_prospect_list(industry, new_prospects)
     return {"status": "ok", "added": len(new_prospects), "industry": industry}
+
+@router.post("/marketing/outreach/follow-up")
+async def outreach_follow_up():
+    """Sendet Follow-Up Mails an Firmen die vor 3+ Tagen angeschrieben wurden."""
+    result = await AutonomousMarketingEngine._send_follow_ups()
+    return result or {"status": "no_follow_ups", "message": "Keine Follow-Ups faellig"}
+
+@router.get("/marketing/outreach/follow-ups")
+async def follow_up_log(limit: int = 50):
+    """Zeigt alle gesendeten Follow-Up Mails."""
+    return AutonomousMarketingEngine.follow_up_sent[-limit:]
 
 @router.get("/marketing/outreach/sent")
 async def outreach_sent_log(limit: int = 50):
@@ -1849,6 +1859,7 @@ class AutonomousMarketingEngine:
     outreach_sent: List[Dict] = []
     outreach_targets: List[Dict] = []
     bounced_emails: List[Dict] = []
+    follow_up_sent: List[Dict] = []
     outreach_enabled: bool = True  # Aktiviert — 50 echte verifizierte Kontakte vorhanden
     max_emails_per_cycle: int = 10
     max_emails_per_day: int = 25  # Gmail safety limit — far below 500
@@ -2376,6 +2387,81 @@ class AutonomousMarketingEngine:
             await asyncio.sleep(_rnd2.randint(30, 90))
         
         return {"sent": sent_count, "industry": industry, "remaining_today": max_per_day - sent_today - sent_count}
+    
+    @classmethod
+    async def _send_follow_ups(cls):
+        """Sendet Follow-Up Mails an Firmen die vor 3+ Tagen angeschrieben wurden
+        und noch nicht geantwortet haben. Max 1 Follow-Up pro Firma."""
+        if not EmailEngine.is_configured:
+            return
+        
+        now = datetime.now(timezone.utc)
+        sent_count = 0
+        
+        for record in cls.outreach_sent:
+            # Skip if already followed up
+            if any(f.get("original_id") == record.get("id") for f in cls.follow_up_sent):
+                continue
+            
+            # Check if 3+ days since first email
+            sent_time = datetime.fromisoformat(record["timestamp"].replace("Z","+00:00"))
+            days_since = (now - sent_time).days
+            
+            if days_since < 3:
+                continue
+            
+            company = record.get("company", "")
+            email = record.get("email", "")
+            
+            # Generate short follow-up
+            import random as _rnd
+            sender_names = ["Sarah", "Michael", "Lisa", "Thomas", "Anna", "Daniel"]
+            sender_name = _rnd.choice(sender_names)
+            
+            followup_prompt = (
+                f"Schreibe eine kurze Follow-Up Email an {company}. "
+                f"Du hast ihnen vor ein paar Tagen schon geschrieben. "
+                f"WICHTIG - Sehr kurz: 1-2 Saetze. Locker, nicht aufdringlich. "
+                f"Einfach nachfragen ob sie die erste Mail gesehen haben. "
+                f"Keine Marketing-Sprache. Keine Aufzaehlungen. "
+                f"Unterschreib mit Gruesse, {sender_name}. "
+                f"Betreff: Re: [urspruenglicher Betreff] oder max 35 Zeichen. "
+                f"Sprache: Deutsch. KEINE Uebertreibung."
+            )
+            
+            try:
+                email_content = await SmartAIRouter.call_llm_efficient(followup_prompt, "cold_outreach_leadgen")
+            except Exception as e:
+                logger.error(f"Follow-Up: Generierung fuer {company} fehlgeschlagen: {e}")
+                continue
+            
+            lines = email_content.strip().split("\n")
+            subject = lines[0].replace("Betreff:", "").replace("Subject:", "").strip()
+            body = "\n".join(lines[1:]).strip()
+            if not subject:
+                subject = f"Re: {record.get('subject', 'Kurze Frage')}"
+            if not body:
+                body = email_content
+            
+            result = await EmailEngine.send_email(email, subject, body, "cold_outreach_leadgen")
+            
+            cls.follow_up_sent.append({
+                "original_id": record.get("id"),
+                "company": company,
+                "email": email,
+                "subject": subject,
+                "status": result.get("status", "error"),
+                "timestamp": now.isoformat()
+            })
+            
+            if result.get("status") == "sent":
+                sent_count += 1
+                logger.info(f"Follow-Up an {company} ({email}) gesendet")
+            
+            import random as _rnd2
+            await asyncio.sleep(_rnd2.randint(60, 120))
+        
+        return {"follow_ups_sent": sent_count}
     
     @classmethod
     async def _generate_directory_listing(cls):
