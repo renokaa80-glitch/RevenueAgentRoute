@@ -1327,6 +1327,17 @@ async def marketing_trigger():
 SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
 SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
 SMTP_USER = os.getenv("SMTP_USER", "revenue.agent.route@gmail.com")
+# Clean markdown/auto-link formatting that Samsung keyboard adds
+SMTP_USER = SMTP_USER.replace("[", "").replace("]", "").replace("(", "").replace(")", "")
+# Extract email from "mailto:" links if present
+import re as _re
+_mailto_match = _re.search(r'mailte?:([^\s\[\]\(\)]+@[^\s\[\]\(\)]+)', SMTP_USER)
+if _mailto_match:
+    SMTP_USER = _mailto_match.group(1)
+# Fallback: extract any email-like pattern
+_email_match = _re.search(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', SMTP_USER)
+if _email_match:
+    SMTP_USER = _email_match.group(0)
 if "@" not in SMTP_USER or "deine" in SMTP_USER:
     SMTP_USER = "revenue.agent.route@gmail.com"
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
