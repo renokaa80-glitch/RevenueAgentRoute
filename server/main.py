@@ -118,7 +118,7 @@ learning_knowledge: List[Dict] = []
 audit_logs: List[Dict] = []
 tenants: Dict[str, dict] = {}
 
-current_version: str = "22.1.0"
+current_version: str = "22.2.0"
 
 # ===== TOKEN SAVER SYSTEM (NEW) =====
 class TokenSaver:
@@ -1374,7 +1374,7 @@ Ihr RevenueAgentRoute Team
 71 KI-Agenten arbeiten 24/7 fuer Sie."""
     await EmailEngine.send_email(email, welcome_subject, welcome_body, bot_name="newsletter_growth_curation")
 
-@router.get("/leads/all")
+@router.get("/leads/captured")
 async def get_all_captured_leads(limit: int = 100):
     """Alle erfassten Leads (oeffentlich fuer Dashboard)."""
     return captured_leads[-limit:]
@@ -1575,6 +1575,49 @@ async def marketing_directory_listings(limit: int = 20):
     """Generierte Directory-Listings abrufen."""
     return AutonomousMarketingEngine.directory_listings[:limit]
 
+# ============================================================
+# OUTREACH CONTROL — Status, Toggle, Sent-Log, Bounces
+# ============================================================
+@router.get("/marketing/outreach/status")
+async def outreach_status():
+    """Status der autonomen Cold-Outreach-Kampagne."""
+    return {
+        "enabled": AutonomousMarketingEngine.outreach_enabled,
+        "total_sent": len(AutonomousMarketingEngine.outreach_sent),
+        "total_targets": len(AutonomousMarketingEngine.outreach_targets),
+        "total_bounced": len(AutonomousMarketingEngine.bounced_emails),
+        "max_per_cycle": AutonomousMarketingEngine.max_emails_per_cycle,
+        "max_per_day": AutonomousMarketingEngine.max_emails_per_day,
+        "recent_sent": AutonomousMarketingEngine.outreach_sent[-20:],
+        "recent_bounced": AutonomousMarketingEngine.bounced_emails[-20:]
+    }
+
+@router.post("/marketing/outreach/toggle")
+async def outreach_toggle(req: dict):
+    """Aktiviert/Deaktiviert die autonome Cold-Outreach."""
+    AutonomousMarketingEngine.outreach_enabled = req.get("enabled", True)
+    return {"status": "ok", "outreach_enabled": AutonomousMarketingEngine.outreach_enabled}
+
+@router.post("/marketing/outreach/run-now")
+async def outreach_run_now(req: dict = None):
+    """Startet sofort eine Cold-Outreach-Kampagne (manueller Trigger)."""
+    req = req or {}
+    industry = req.get("industry", "")
+    if industry:
+        result = await AutonomousMarketingEngine._autonomous_cold_outreach_manual(industry)
+    else:
+        result = await AutonomousMarketingEngine._autonomous_cold_outreach()
+    return result or {"status": "skipped", "message": "Outreach deaktiviert oder kein Ergebnis"}
+
+@router.get("/marketing/outreach/sent")
+async def outreach_sent_log(limit: int = 50):
+    return AutonomousMarketingEngine.outreach_sent[-limit:]
+
+@router.get("/marketing/outreach/bounced")
+async def outreach_bounced_log(limit: int = 50):
+    """Liste fehlgeschlagener/gebouncter Zustellungen."""
+    return AutonomousMarketingEngine.bounced_emails[-limit:]
+
 @router.post("/marketing/trigger")
 async def marketing_trigger():
     """Startet sofort einen Marketing-Zyklus."""
@@ -1632,7 +1675,7 @@ class EmailEngine:
     
     @classmethod
     async def send_email(cls, to: str, subject: str, body: str, bot_name: str = "RevenueAgentRoute") -> Dict:
-        """Sendet eine Email ueber SMTP."""
+        """Sendet eine Email ueber SMTP — mit Spam-Prevention."""
         if not cls.is_configured:
             logger.warning(f"SMTP nicht konfiguriert — Email an {to} nicht gesendet")
             return {"status": "error", "message": "SMTP_PASSWORD nicht gesetzt in Railway"}
@@ -1642,10 +1685,18 @@ class EmailEngine:
             msg["From"] = f"{bot_name} <{SMTP_USER}>"
             msg["To"] = to
             msg["Subject"] = subject
-            
-            # Plain text + HTML
+            # SPAM PREVENTION HEADERS
+            msg["Message-ID"] = f"<{uuid.uuid4().hex}@revenueagentroute.com>"
+            msg["Date"] = datetime.now(timezone.utc).strftime("%a, %d %b %Y %H:%M:%S +0000")
+            msg["X-Mailer"] = "RevenueAgentRoute Mail Client"
+            msg["List-Unsubscribe"] = f"<mailto:{SMTP_USER}?subject=unsubscribe>"
+            msg["Precedence"] = "bulk"
+            msg["Auto-Submitted"] = "auto-generated"
+            # Plain text always first (spam filters prefer text before HTML)
             msg.attach(MIMEText(body, "plain", "utf-8"))
-            html_body = f"<html><body style='font-family:sans-serif;line-height:1.6;color:#333'><div style='max-width:600px;margin:0 auto;padding:20px'><h2 style='color:#1a3a5c'>{subject}</h2><div>{body.replace(chr(10),'<br>')}</div><hr style='border:none;border-top:1px solid #eee;margin:20px 0'><p style='color:#999;font-size:12px'>Gesendet von RevenueAgentRoute — 71 KI-Agenten arbeiten 24/7 fuer Sie.<br>Diese Email wurde automatisch von Bot '{bot_name}' generiert.</p></div></body></html>"
+            
+            # HTML version (after plain text — spam filters prefer text first)
+            html_body = f"<html><body style='font-family:sans-serif;line-height:1.6;color:#333'><div style='max-width:600px;margin:0 auto;padding:20px'><div>{body.replace(chr(10),'<br>')}</div></div></body></html>"
             msg.attach(MIMEText(html_body, "html", "utf-8"))
             
             # Send via SMTP
@@ -1771,7 +1822,8 @@ class AutonomousMarketingEngine:
     # Autonomous Cold Outreach tracking
     outreach_sent: List[Dict] = []
     outreach_targets: List[Dict] = []
-    outreach_enabled: bool = True
+    bounced_emails: List[Dict] = []
+    outreach_enabled: bool = False  # AUS bis echte, geprueft Kontaktlisten vorhanden sind
     max_emails_per_cycle: int = 10
     max_emails_per_day: int = 25  # Gmail safety limit — far below 500
     
@@ -1970,14 +2022,30 @@ class AutonomousMarketingEngine:
             logger.error(f"Outreach: Lead-Generierung fehlgeschlagen: {e}")
             return
         
-        # Parse prospects
+        # Parse prospects — MIT VALIDIERUNG (verhindert Bounces + Spam-Risiko)
+        import re as _re
+        email_pattern = _re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+        # Bekannte Grossfirmen-Domains blocken — die AI erfindet oft plausible aber falsche
+        # info@-Adressen bei bekannten Marken, was zu Bounces + Reputationsschaden fuehrt
+        blocked_domains = ["snyk.io", "google.com", "microsoft.com", "amazon.com", "apple.com",
+                           "meta.com", "salesforce.com", "sap.com", "oracle.com", "ibm.com"]
         prospects = []
         for line in prospect_result.strip().split("\n"):
             parts = [p.strip() for p in line.split("|")]
             if len(parts) >= 2 and "@" in parts[1]:
+                email_candidate = parts[1].strip()
+                if not email_pattern.match(email_candidate):
+                    continue
+                domain = email_candidate.split("@")[-1].lower()
+                if domain in blocked_domains:
+                    logger.warning(f"Outreach: {email_candidate} blockiert (bekannte Grossfirma-Domain)")
+                    continue
+                # Skip bereits gebounced Adressen
+                if any(b.get("email") == email_candidate for b in cls.bounced_emails):
+                    continue
                 prospects.append({
                     "company": parts[0],
-                    "email": parts[1].strip(),
+                    "email": email_candidate,
                     "reason": parts[2] if len(parts) > 2 else "KI-Automatisierung",
                     "industry": industry
                 })
@@ -2033,9 +2101,21 @@ class AutonomousMarketingEngine:
             subject = lines[0].replace("Betreff:", "").replace("Subject:", "").strip()
             body = "\n".join(lines[1:]).strip()
             if not subject:
-                subject = f"KI-Agenten fuer {company} — 7 Tage kostenlos"
+                subject = f"Kurze Frage an {company}"
             if not body:
                 body = email_content
+            
+            # PLACEHOLDER-FIX: Nie einen unersetzten Platzhalter verschicken
+            import re as _re2
+            placeholder_pattern = _re2.compile(r'\[(Name|Firma|Vorname|Nachname|Company|Branche)\]', _re2.IGNORECASE)
+            if placeholder_pattern.search(body) or placeholder_pattern.search(subject):
+                # Ersetze generisch statt zu verschicken mit kaputtem Platzhalter
+                body = placeholder_pattern.sub("", body)
+                subject = placeholder_pattern.sub("", subject)
+                body = body.replace("Hallo ,", "Hallo,").replace("Hallo  ,", "Hallo,")
+                # Doppelte Leerzeichen aufraeumen
+                body = _re2.sub(r' {2,}', ' ', body)
+                subject = _re2.sub(r' {2,}', ' ', subject).strip()
             
             # Send the email
             result = await EmailEngine.send_email(
@@ -2059,6 +2139,9 @@ class AutonomousMarketingEngine:
             if result.get("status") == "sent":
                 sent_count += 1
                 logger.info(f"Outreach: Cold-Email gesendet an {company} ({email_addr})")
+            else:
+                cls.bounced_emails.append({"email": email_addr, "company": company, "reason": result.get("message","")})
+                logger.warning(f"Outreach: Fehlgeschlagen fuer {email_addr} — als problematisch markiert")
             
             # HUMAN-LIKE DELAY: 30-90 seconds between emails, randomized
             import random as _rnd2
