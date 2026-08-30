@@ -1327,6 +1327,8 @@ async def marketing_trigger():
 SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
 SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
 SMTP_USER = os.getenv("SMTP_USER", "revenue.agent.route@gmail.com")
+if "@" not in SMTP_USER or "deine" in SMTP_USER:
+    SMTP_USER = "revenue.agent.route@gmail.com"
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
 BOT_EMAIL = SMTP_USER  # Central bot email address
 
