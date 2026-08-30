@@ -118,7 +118,7 @@ learning_knowledge: List[Dict] = []
 audit_logs: List[Dict] = []
 tenants: Dict[str, dict] = {}
 
-current_version: str = "29.0.0"
+current_version: str = "30.0.0"
 
 # ===== TOKEN SAVER SYSTEM (NEW) =====
 class TokenSaver:
@@ -2191,6 +2191,11 @@ class AutonomousMarketingEngine:
             {"company": "Become Denmark", "email": "info@become.dk", "website": "https://www.become.dk", "city": "Kopenhagen, DK"},
             {"company": "Gateway Digital NL", "email": "connect@thegatewaydigital.com", "website": "https://www.thegatewaydigital.com", "city": "Niederlande"},
             {"company": "R17 Ventures", "email": "sales@r17ventures.com", "website": "https://r17ventures.com", "city": "Schweiz/Dänemark"},
+        ],
+        "Schweiz Zefix (SPARQL gescrapet)": [
+            {"company": "Simba Digital", "email": "contact@simba-digital.ch", "website": "https://simba-digital.ch", "city": "Cologny, CH"},
+            {"company": "Streck Immobilien", "email": "info@streck.ch", "website": "https://streck.ch", "city": "Aclens, CH"},
+            {"company": "Fiege Logistik CH", "email": "infoch@fiege.com", "website": "https://fiege.ch", "city": "Balerna, CH"},
         ],
     }
     
