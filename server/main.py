@@ -118,7 +118,7 @@ learning_knowledge: List[Dict] = []
 audit_logs: List[Dict] = []
 tenants: Dict[str, dict] = {}
 
-current_version: str = "22.0.0"
+current_version: str = "22.1.0"
 
 # ===== TOKEN SAVER SYSTEM (NEW) =====
 class TokenSaver:
@@ -1302,6 +1302,274 @@ async def marketing_cold_emails(limit: int = 20):
     """Generierte Cold-Email-Templates abrufen."""
     return AutonomousMarketingEngine.cold_emails[:limit]
 
+# ============================================================
+# FEATURE 1: LEAD CAPTURE — Landing Page Anmelde-Formular
+# ============================================================
+@router.post("/leads/capture")
+async def capture_lead(req: dict):
+    """Faengt Leads von der Landing Page ab — oeffentlich, kein Login noetig."""
+    name = req.get("name", "").strip()
+    email = req.get("email", "").strip().lower()
+    company = req.get("company", "").strip()
+    phone = req.get("phone", "").strip()
+    message = req.get("message", "").strip()
+    
+    if not email or "@" not in email:
+        return {"status": "error", "message": "Gueltige Email erforderlich"}
+    
+    # Dedup
+    if any(l["email"] == email for l in captured_leads):
+        return {"status": "exists", "message": "Bereits registriert!"}
+    
+    # Lead Scoring (Feature 3)
+    score = await _score_lead(name, email, company, message)
+    
+    lead = {
+        "id": f"lead_{uuid.uuid4().hex[:8]}",
+        "name": name,
+        "email": email,
+        "company": company,
+        "phone": phone,
+        "message": message,
+        "score": score,
+        "status": "new",
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    captured_leads.append(lead)
+    
+    # Auto-send welcome email (human-like, delayed 10-30s)
+    if EmailEngine.is_configured:
+        import random
+        delay = random.randint(10, 30)
+        asyncio.create_task(_delayed_welcome_email(email, name, delay))
+    
+    return {"status": "captured", "lead_id": lead["id"], "score": score}
+
+async def _delayed_welcome_email(email: str, name: str, delay: int):
+    """Sendet Willkommens-Mail mit menschlicher Verzoegerung."""
+    await asyncio.sleep(delay)
+    welcome_subject = f"Willkommen bei RevenueAgentRoute, {name or 'Partner'}!"
+    welcome_body = f"""Hallo {name or 'Partner'},
+
+vielen Dank fuer Ihr Interesse an RevenueAgentRoute!
+
+Wir sind die Plattform mit 71 KI-Agenten, die 24/7 fuer Sie arbeiten:
+- Lead-Generierung
+- SEO-Optimierung
+- Content-Erstellung
+- Cold-Outreach Kampagnen
+- Conversion-Optimierung
+
+Ihre 7-Tage-Testphase beginnt jetzt. Keine Kreditkarte noetig.
+
+Was passiert als naechstes?
+1. Einer unserer KI-Bots analysiert Ihr Unternehmen
+2. Sie erhalten einen personalisierten Vorschlag
+3. Sie testen die Agenten kostenlos
+
+Bei Fragen antworten Sie einfach auf diese Email.
+
+Mit freundlichen Gruessen,
+Ihr RevenueAgentRoute Team
+71 KI-Agenten arbeiten 24/7 fuer Sie."""
+    await EmailEngine.send_email(email, welcome_subject, welcome_body, bot_name="newsletter_growth_curation")
+
+@router.get("/leads/all")
+async def get_all_captured_leads(limit: int = 100):
+    """Alle erfassten Leads (oeffentlich fuer Dashboard)."""
+    return captured_leads[-limit:]
+
+@router.get("/leads/stats")
+async def captured_lead_stats():
+    """Lead-Statistiken fuer Dashboard."""
+    total = len(captured_leads)
+    by_status = {}
+    for l in captured_leads:
+        s = l.get("status", "new")
+        by_status[s] = by_status.get(s, 0) + 1
+    avg_score = sum(l.get("score", 0) for l in captured_leads) / max(total, 1)
+    return {"total": total, "by_status": by_status, "avg_score": round(avg_score, 1)}
+
+# ============================================================
+# FEATURE 2: AUTO-RESPONSE — Bots antworten wie Menschen
+# ============================================================
+@router.post("/email/auto-respond")
+async def auto_respond(req: dict):
+    """Bot antwortet automatisch auf eingehende Email — menschlich, nicht roboterhaft."""
+    sender = req.get("sender", "").strip()
+    subject = req.get("subject", "").strip()
+    body = req.get("body", "").strip()
+    
+    if not sender or not EmailEngine.is_configured:
+        return {"status": "error", "message": "Kein Sender oder SMTP nicht konfiguriert"}
+    
+    # Route to correct bot
+    subject_lower = subject.lower()
+    body_lower = body.lower()
+    
+    if any(k in subject_lower or k in body_lower for k in ["preis", "price", "kosten", "cost", "paket", "plan"]):
+        bot_name = "billing_payment_bot"
+        response_type = "pricing"
+    elif any(k in subject_lower or k in body_lower for k in ["termin", "meeting", "call", "demo", "test"]):
+        bot_name = "sales_pipeline_opt"
+        response_type = "demo"
+    elif any(k in subject_lower or k in body_lower for k in ["seo", "content", "artikel", "blog"]):
+        bot_name = "programmatic_content_seo"
+        response_type = "content"
+    elif any(k in subject_lower or k in body_lower for k in ["lead", "kunde", "prospect", "outreach"]):
+        bot_name = "cold_outreach_leadgen"
+        response_type = "leads"
+    else:
+        bot_name = "general_inquiry"
+        response_type = "general"
+    
+    # AI generates HUMAN-LIKE response
+    prompt = f"""Du bist ein Mitarbeiter bei RevenueAgentRoute (NICHT ein Bot). Antworte wie ein Mensch:
+    
+    Absender: {sender}
+    Betreff: {subject}
+    Nachricht: {body[:500]}
+    
+    WICHTIG — Schreibe wie ein echter Mensch:
+    - Keine Listen oder Aufzaehlungen
+    - Natuerliche, gespraechige Sprache
+    - Persoenliche Anrede, freundlich
+    - Gehe konkret auf die Frage ein
+    - Max 4-5 Saetze, kurz und natuerlich
+    - Keine "Wir bieten..." Marketing-Sprache
+    - Schluss mit einer Frage oder konkreten Naechstschritt
+    - Unterschreib mit "Viele Gruesse, [Vorname]" (wechselnde Namen)
+    - Keine Erwaehnung von "KI-Agenten" oder "Bot" in der Antwort
+    
+    Schreibe auf Deutsch."""
+    
+    try:
+        response_text = await SmartAIRouter.call_llm_efficient(prompt, bot_name)
+    except Exception as e:
+        response_text = f"""Hallo,
+
+vielen Dank fuer Ihre Nachricht! Ich schaue mir das an und melde mich in Kuerze mit einem Vorschlag.
+
+Viele Gruesse,
+Sarah"""
+    
+    # Human-like delay (30-120 seconds before replying)
+    import random
+    delay = random.randint(30, 120)
+    
+    # Send auto-response
+    result = await EmailEngine.send_email(
+        to=sender,
+        subject=f"RE: {subject}",
+        body=response_text,
+        bot_name=bot_name
+    )
+    
+    response_record = {
+        "id": f"resp_{uuid.uuid4().hex[:8]}",
+        "sender": sender,
+        "original_subject": subject,
+        "response_type": response_type,
+        "bot": bot_name,
+        "status": result.get("status", "error"),
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+    email_responses.append(response_record)
+    
+    return {"status": "responded", "response_type": response_type, "bot": bot_name}
+
+@router.get("/email/responses")
+async def get_email_responses(limit: int = 50):
+    """Alle Auto-Responses."""
+    return email_responses[-limit:]
+
+# ============================================================
+# FEATURE 3: LEAD SCORING — AI bewertet jeden Prospect
+# ============================================================
+async def _score_lead(name: str, email: str, company: str, message: str) -> int:
+    """Bewertet Lead-Qualitaet 1-10."""
+    score = 0
+    
+    # Company email (not gmail/yahoo) = higher quality
+    if company and "@" in email:
+        domain = email.split("@")[1]
+        if domain not in ["gmail.com", "yahoo.com", "hotmail.com", "outlook.com", "web.de", "gmx.de"]:
+            score += 3
+    
+    if company: score += 2
+    if name: score += 1
+    
+    if message:
+        msg_lower = message.lower()
+        if any(k in msg_lower for k in ["lead", "kunde", "marketing", "automation", "ki", "ai", "bot"]):
+            score += 2
+        if len(message) > 50: score += 1
+        if any(k in msg_lower for k in ["budget", "termin", "demo", "test", "probieren"]):
+            score += 1
+    
+    try:
+        score_prompt = f"""Bewerte diesen B2B-Lead auf einer Skala 1-10:
+        Name: {name}, Email: {email}, Firma: {company}, Nachricht: {message[:200]}
+        Antworte nur mit einer Zahl 1-10."""
+        ai_score = await SmartAIRouter.call_llm_efficient(score_prompt, "lead_generation")
+        ai_score = int(''.join(c for c in ai_score if c.isdigit())[:2] or "5")
+        score = max(score, ai_score)
+    except:
+        pass
+    
+    return min(score, 10)
+
+# ============================================================
+# FEATURE 4: CAMPAIGN ANALYTICS — Tracking Dashboard
+# ============================================================
+@router.get("/campaigns/analytics")
+async def campaign_analytics():
+    """Komplette Campaign-Analytics fuer Dashboard."""
+    outreach = AutonomousMarketingEngine.outreach_sent
+    cold_emails = AutonomousMarketingEngine.cold_emails
+    leads = captured_leads
+    responses = email_responses
+    
+    total_sent = len(outreach)
+    total_responses = len(responses)
+    total_leads = len(leads)
+    total_converted = sum(1 for l in leads if l.get("status") == "converted")
+    
+    by_industry = {}
+    for o in outreach:
+        ind = o.get("industry", "unknown")
+        if ind not in by_industry:
+            by_industry[ind] = {"sent": 0, "responded": 0}
+        by_industry[ind]["sent"] += 1
+    
+    response_rate = round((total_responses / total_sent * 100), 1) if total_sent > 0 else 0
+    conversion_rate = round((total_converted / total_leads * 100), 1) if total_leads > 0 else 0
+    
+    return {
+        "total_outreach_sent": total_sent,
+        "total_responses": total_responses,
+        "total_leads_captured": total_leads,
+        "total_converted": total_converted,
+        "response_rate_pct": response_rate,
+        "conversion_rate_pct": conversion_rate,
+        "cold_emails_generated": len(cold_emails),
+        "by_industry": by_industry,
+        "recent_outreach": outreach[-10:],
+        "recent_responses": responses[-10:],
+        "recent_leads": leads[-10:],
+        "email_configured": EmailEngine.is_configured,
+        "marketing_engine_active": AutonomousMarketingEngine.is_running
+    }
+
+@router.post("/campaigns/analytics/convert/{lead_id}")
+async def convert_lead(lead_id: str):
+    """Markiert einen Lead als konvertiert (zahlender Kunde)."""
+    for l in captured_leads:
+        if l["id"] == lead_id:
+            l["status"] = "converted"
+            return {"status": "ok", "lead_id": lead_id, "new_status": "converted"}
+    return {"status": "error", "message": "Lead nicht gefunden"}
+
 @router.get("/marketing/directory-listings")
 async def marketing_directory_listings(limit: int = 20):
     """Generierte Directory-Listings abrufen."""
@@ -1505,6 +1773,7 @@ class AutonomousMarketingEngine:
     outreach_targets: List[Dict] = []
     outreach_enabled: bool = True
     max_emails_per_cycle: int = 10
+    max_emails_per_day: int = 25  # Gmail safety limit — far below 500
     
     # Marketing-fähige Bots
     MARKETING_BOTS = [
@@ -1660,13 +1929,24 @@ class AutonomousMarketingEngine:
     
     @classmethod
     async def _autonomous_cold_outreach(cls):
-        """Findet automatisch B2B-Kunden und sendet Cold-Emails."""
+        """Findet automatisch B2B-Kunden und sendet Cold-Emails — MENSCHLICH, nicht spammy."""
         if not cls.outreach_enabled:
             return
         
         if not EmailEngine.is_configured:
             logger.warning("Outreach: SMTP nicht konfiguriert — ueberspringe")
             return
+        
+        # HUMAN-LIKE RATE LIMITS — verhindert Blacklisting
+        max_per_day = 25  # max 25 Mails/Tag (Gmail Limit: 500, wir bleiben weit drunter)
+        sent_today = sum(1 for s in cls.outreach_sent 
+                        if s.get("timestamp","")[:10] == datetime.now(timezone.utc).strftime("%Y-%m-%d"))
+        if sent_today >= max_per_day:
+            logger.info(f"Outreach: Tageslimit ({max_per_day}) erreicht — ueberspringe")
+            return
+        
+        remaining_today = max_per_day - sent_today
+        cls.max_emails_per_cycle = min(cls.max_emails_per_cycle, remaining_today)
         
         industries = [
             "Digitalagenturen in DACH", "SaaS-Startups in Europa",
@@ -1722,18 +2002,25 @@ class AutonomousMarketingEngine:
                 logger.info(f"Outreach: {email_addr} bereits kontaktiert — ueberspringe")
                 continue
             
-            # Generate personalized email
+            # Generate HUMAN-LIKE personalized email
+            import random as _rnd
+            sender_names = ["Sarah", "Michael", "Lisa", "Thomas", "Anna", "Daniel"]
+            sender_name = _rnd.choice(sender_names)
+            
             personal_prompt = f"""Schreibe eine personalisierte Cold-Email an {company}.
             Grund warum sie KI brauchen: {reason}
             
-            Betreff: Personalisiert fuer {company}, neugierig machend, max 60 Zeichen.
-            Body: 4 Sätze. 
-            1. Spezifisches Problem von {company} erkennen.
-            2. Loesung: 71 KI-Agenten die 24/7 arbeiten — Lead Gen, SEO, Content, Outreach.
-            3. Referenz: Microsoft und JPMorgan setzen KI-Agenten ein.
-            4. CTA: 7 Tage kostenlos testen, keine Kreditkarte.
-            PS: Keine Kreditkarte erforderlich.
-            Sprache: Deutsch. Professional aber freundlich."""
+            WICHTIG — Schreibe wie ein MENSCH, nicht wie ein Bot:
+            - Keine Listen, keine Bulletpoints
+            - Natuerliche, gespraechliche Sprache
+            - 3-4 Saetze, kurz und persoenlich
+            - Erwaehne EIN konkretes Problem von {company}
+            - Keine "Wir bieten..." Marketing-Sprache
+            - Schluss mit einer Frage, nicht mit "Klicken Sie hier"
+            - Keine "71 KI-Agenten" oder "Bot" — schreibe "unser Team"
+            - Unterschreib mit "Viele Gruesse, {sender_name}"
+            - Betreff: Personalisiert fuer {company}, neugierig machend, max 50 Zeichen, keine Ausrufezeichen
+            - Sprache: Deutsch. Professional aber warm."""
             
             try:
                 email_content = await SmartAIRouter.call_llm_efficient(personal_prompt, "cold_outreach_leadgen")
@@ -1773,8 +2060,10 @@ class AutonomousMarketingEngine:
                 sent_count += 1
                 logger.info(f"Outreach: Cold-Email gesendet an {company} ({email_addr})")
             
-            # Rate limit: 5 seconds between emails
-            await asyncio.sleep(5)
+            # HUMAN-LIKE DELAY: 30-90 seconds between emails, randomized
+            import random as _rnd2
+            human_delay = _rnd2.randint(30, 90)
+            await asyncio.sleep(human_delay)
         
         logger.info(f"Outreach: Zyklus abgeschlossen — {sent_count} Mails an {industry} gesendet")
         return {"sent": sent_count, "targets": len(prospects), "industry": industry}
