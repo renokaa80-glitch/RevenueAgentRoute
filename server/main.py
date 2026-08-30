@@ -345,7 +345,7 @@ class GlobalTimezoneEngine:
 # ===== SMART AI ROUTER (WITH TOKEN SAVER) =====
 class SmartAIRouter:
     if GROQ_API_KEY:
-        CHEAP_MODEL = "llama-3.3-70b-versatile"
+        CHEAP_MODEL = "llama-3.1-8b-instant"
         ADVANCED_MODEL = "llama-3.3-70b-versatile"
     elif GEMINI_API_KEY:
         CHEAP_MODEL = "gemini-1.5-flash"
@@ -392,7 +392,7 @@ class SmartAIRouter:
                 {"role": "system", "content": "Praezise B2B-Antworten. Keine Fuellwoerter."},
                 {"role": "user", "content": prompt[:2000]}
             ],
-            "max_tokens": 400,
+            "max_tokens": 800,
             "temperature": 0.2
         }
 
