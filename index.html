@@ -1142,7 +1142,7 @@
           <button onclick="setLang('en')" id="lang-en" class="lang-btn" style="background:transparent;border:1px solid rgba(255,255,255,0.1);color:#888;padding:6px 10px;border-radius:6px;font-size:0.8rem;cursor:pointer;font-weight:600">EN</button>
           <button onclick="setLang('pt')" id="lang-pt" class="lang-btn" style="background:transparent;border:1px solid rgba(255,255,255,0.1);color:#888;padding:6px 10px;border-radius:6px;font-size:0.8rem;cursor:pointer;font-weight:600">PT</button>
         </div>
-        <button onclick="startCheckout('Kostenlose Testphase', '0.00')" class="btn btn-primary" style="padding: 10px 20px; font-size: 0.9rem;" data-i18n="cta_start">Jetzt starten</button>
+        <button onclick="startCheckout('7-Tage Testversion', '0.00')" class="btn btn-primary" style="padding: 10px 20px; font-size: 0.9rem;" data-i18n="cta_start">Jetzt starten</button>
         <button class="mobile-toggle" id="mobileToggle" aria-label="Menü öffnen">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
         </button>
@@ -1167,8 +1167,8 @@
       </p>
 
       <div class="hero-cta-group">
-        <button onclick="startCheckout('Kostenlose Testphase', '0.00')" class="btn btn-primary">
-          Kostenlos testen
+        <button onclick="startCheckout('7-Tage Testversion', '0.00')" class="btn btn-primary">
+          7 Tage kostenlos testen
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
         </button>
         <a href="#services" class="btn btn-secondary">Services ansehen</a>
@@ -1478,6 +1478,7 @@
         <div class="badge" data-i18n="badge_pricing">Preise & Pakete</div>
         <h2 class="section-title" data-i18n="section_pricing">Pricing</h2>
         <p class="section-subtitle" data-i18n="section_pricing_sub">Wählen Sie den passenden Tarif für Ihre Anforderungen.</p>
+        <div style="display:inline-block;padding:8px 20px;background:rgba(78,168,255,0.1);border:1px solid rgba(78,168,255,0.3);border-radius:8px;margin-bottom:24px;"><span data-i18n="trial_notice" style="color:#4ea8ff;font-weight:600;">⚡ 7 Tage kostenlos testen — keine Kreditkarte erforderlich</span></div>
       </div>
 
       <div class="pricing-grid">
@@ -1642,9 +1643,9 @@
     <div class="container">
       <div class="cta-box">
         <h2 class="cta-title">Bereit, Ihr Geschäft zu skalieren?</h2>
-        <p class="cta-desc">Starten Sie jetzt in unter 30 Sekunden mit Ihrem ersten KI-Agenten.</p>
-        <button onclick="startCheckout('Kostenlose Testphase', '0.00')" class="btn btn-primary" style="padding: 18px 36px; font-size: 1.1rem;">
-          Jetzt kostenlos testen
+        <p class="cta-desc">Starten Sie jetzt in unter 30 Sekunden — 7 Tage kostenlos testen, danach Paket wählen.</p>
+        <button onclick="startCheckout('7-Tage Testversion', '0.00')" class="btn btn-primary" style="padding: 18px 36px; font-size: 1.1rem;">
+          7 Tage kostenlos testen
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
         </button>
       </div>
@@ -1681,6 +1682,7 @@
       <div class="modal-header">
         <h3 class="modal-title">Service buchen</h3>
         <p class="modal-subtitle">Geben Sie Ihre Daten an, um den KI-Agenten zu starten.</p>
+        <div id="trialInfo" style="display:none;padding:10px 16px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:8px;margin:12px 0;color:#10b981;font-size:0.85rem;font-weight:600;"></div>
         <div class="service-tag-badge" id="modalServiceTag">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
           <span id="modalServiceName">Service Name</span> &bull; <span id="modalServicePrice">€9.99</span>
@@ -1821,6 +1823,15 @@
       if (inputService) inputService.value = serviceName;
       if (inputPrice) inputPrice.value = price;
       if (statusEl) statusEl.innerText = '';
+      const trialInfo = document.getElementById("trialInfo");
+      if (trialInfo) {
+        if (price === "0.00" || price === 0) {
+          trialInfo.style.display = "block";
+          trialInfo.innerText = currentLang === "en" ? "✓ 7-day free trial — no charges, no credit card" : currentLang === "pt" ? "✓ 7 dias de teste grátis — sem cobranças, sem cartão" : "✓ 7 Tage kostenlos testen — keine Gebühren, keine Kreditkarte";
+        } else {
+          trialInfo.style.display = "none";
+        }
+      }
 
       if (modal) {
         modal.classList.add('active');
@@ -1983,7 +1994,7 @@ const translations = {
     nav_pricing: "Pricing",
     nav_how: "How it works",
     cta_start: "Jetzt starten",
-    hero_sub: "Vom Lead bis zum Deal — vollautomatisch. Our 71 KI-Agenten arbeiten 24/7 an Ihrem Wachstum.",
+    hero_sub: "Vom Lead bis zum Deal — vollautomatisch. 71 KI-Agenten arbeiten 24/7 an Ihrem Wachstum. Jetzt 7 Tage kostenlos testen.",
     badge_top: "Top Services",
     section_services: "High-Impact KI-Agenten",
     section_services_sub: "Wählen Sie aus unseren beliebtesten B2B-Agenten für €9.99 pro Task.",
@@ -2002,8 +2013,9 @@ const translations = {
     badge_pricing: "Preise & Pakete",
     section_pricing: "Pricing",
     section_pricing_sub: "Wählen Sie den passenden Tarif für Ihre Anforderungen.",
+    trial_notice: "⚡ 7 Tage kostenlos testen — keine Kreditkarte erforderlich",
     tier_single: "Einzeltask",
-    tier_single_sub: "Perfekt zum Testen",
+    tier_single_sub: "Inkl. 7-Tage Testversion",
     tier_business: "Business Bundle",
     tier_business_sub: "5 Tasks pro Monat, Priorisierter Support",
     tier_enterprise: "Enterprise",
@@ -2019,7 +2031,7 @@ const translations = {
     nav_pricing: "Pricing",
     nav_how: "How it works",
     cta_start: "Get Started",
-    hero_sub: "From lead to deal — fully automated. Our 71 AI agents work 24/7 on your growth.",
+    hero_sub: "From lead to deal — fully automated. 71 AI agents work 24/7 on your growth. Try free for 7 days.",
     badge_top: "Top Services",
     section_services: "High-Impact AI Agents",
     section_services_sub: "Choose from our most popular B2B agents for €9.99 per task.",
@@ -2038,8 +2050,9 @@ const translations = {
     badge_pricing: "Pricing & Plans",
     section_pricing: "Pricing",
     section_pricing_sub: "Choose the right plan for your needs.",
+    trial_notice: "⚡ 7 days free trial — no credit card required",
     tier_single: "Single Task",
-    tier_single_sub: "Perfect for testing",
+    tier_single_sub: "Incl. 7-day free trial",
     tier_business: "Business Bundle",
     tier_business_sub: "5 tasks per month, Priority support",
     tier_enterprise: "Enterprise",
@@ -2055,7 +2068,7 @@ const translations = {
     nav_pricing: "Preços",
     nav_how: "Como funciona",
     cta_start: "Começar",
-    hero_sub: "Do lead ao contrato — totalmente automático. Nossos 71 agentes IA trabalham 24/7 no seu crescimento.",
+    hero_sub: "Do lead ao contrato — totalmente automático. 71 agentes IA trabalham 24/7 no seu crescimento. Teste grátis por 7 dias.",
     badge_top: "Top Serviços",
     section_services: "Agentes IA de Alto Impacto",
     section_services_sub: "Escolha entre nossos agentes B2B mais populares por €9.99 por tarefa.",
@@ -2074,8 +2087,9 @@ const translations = {
     badge_pricing: "Preços e Planos",
     section_pricing: "Preços",
     section_pricing_sub: "Escolha o plano certo para as suas necessidades.",
+    trial_notice: "⚡ 7 dias de teste grátis — sem cartão de crédito",
     tier_single: "Tarefa Única",
-    tier_single_sub: "Perfeito para testar",
+    tier_single_sub: "Incl. teste grátis de 7 dias",
     tier_business: "Pacote Business",
     tier_business_sub: "5 tarefas por mês, Suporte prioritário",
     tier_enterprise: "Enterprise",
