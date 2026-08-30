@@ -1542,7 +1542,22 @@ app.add_middleware(
 
 Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 
+
 app.include_router(router)
+
+# ===== PUBLIC ROUTES (not under /api/revenue prefix) =====
+@app.get("/content", include_in_schema=False)
+async def public_content_root():
+    """Oeffentliche Content-Seite — SEO-indexiert."""
+    return await public_content_page()
+
+@app.get("/sitemap.xml", include_in_schema=False)
+async def public_sitemap():
+    return await sitemap()
+
+@app.get("/robots.txt", include_in_schema=False)
+async def public_robots():
+    return await robots()
 
 @app.get("/", include_in_schema=False)
 async def root_landing_page():
