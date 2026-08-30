@@ -118,7 +118,7 @@ learning_knowledge: List[Dict] = []
 audit_logs: List[Dict] = []
 tenants: Dict[str, dict] = {}
 
-current_version: str = "26.0.0"
+current_version: str = "27.0.0"
 
 # ===== TOKEN SAVER SYSTEM (NEW) =====
 class TokenSaver:
@@ -2412,6 +2412,9 @@ class AutonomousMarketingEngine:
             else:
                 cls.bounced_emails.append({"email": email_addr, "company": company, "reason": result.get("message","")})
             
+            # Persist after each email
+            cls._save_outreach_data()
+            
             import random as _rnd2
             await asyncio.sleep(_rnd2.randint(30, 90))
         
@@ -2486,6 +2489,9 @@ class AutonomousMarketingEngine:
             if result.get("status") == "sent":
                 sent_count += 1
                 logger.info(f"Follow-Up an {company} ({email}) gesendet")
+            
+            # Persist after follow-up
+            cls._save_outreach_data()
             
             import random as _rnd2
             await asyncio.sleep(_rnd2.randint(60, 120))
