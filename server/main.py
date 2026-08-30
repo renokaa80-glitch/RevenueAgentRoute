@@ -118,7 +118,7 @@ learning_knowledge: List[Dict] = []
 audit_logs: List[Dict] = []
 tenants: Dict[str, dict] = {}
 
-current_version: str = "24.0.0"
+current_version: str = "24.1.0"
 
 # ===== TOKEN SAVER SYSTEM (NEW) =====
 class TokenSaver:
@@ -2188,8 +2188,12 @@ class AutonomousMarketingEngine:
             email_addr = prospect["email"]
             reason = prospect["reason"]
             
-            # Skip if already contacted
-            if any(s.get("to") == email_addr for s in cls.outreach_sent):
+            # Skip if already contacted — check both "email" and "to" keys
+            already_contacted = any(
+                s.get("email") == email_addr or s.get("to") == email_addr 
+                for s in cls.outreach_sent
+            )
+            if already_contacted:
                 logger.info(f"Outreach: {email_addr} bereits kontaktiert — ueberspringe")
                 continue
             
