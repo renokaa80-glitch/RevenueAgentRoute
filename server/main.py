@@ -1235,6 +1235,16 @@ async def email_inbox(limit: int = 50):
     """Alle eingehenden Emails."""
     return EmailEngine.inbox[:limit]
 
+@router.post("/email/check-imap")
+async def email_check_imap():
+    """Check Gmail inbox via IMAP for new replies and route them."""
+    return await EmailEngine.check_inbox_imap()
+
+@router.get("/email/hot-leads")
+async def email_hot_leads():
+    """Alle Hot Leads (Replies auf Cold Emails)."""
+    return [e for e in EmailEngine.inbox if e.get("is_reply") or e.get("status") == "hot_lead"]
+
 @router.get("/email/sent")
 async def email_sent(limit: int = 50):
     """Alle gesendeten Emails."""
@@ -1699,6 +1709,9 @@ BOT_EMAIL = SMTP_USER  # Central bot email address
 
 # ===== EMAIL ENGINE =====
 import smtplib
+import imaplib
+import email as email_lib
+from email.utils import parsedate_to_datetime
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import email as email_lib
@@ -1832,6 +1845,106 @@ revenue.agent.route@gmail.com"""
         
         return {"status": "distributed", "assigned_bot": assigned_bot, "priority": priority}
     
+
+    @classmethod
+    async def check_inbox_imap(cls) -> Dict:
+        """Check Gmail inbox via IMAP for replies to our cold emails."""
+        if not cls.is_configured:
+            return {"status": "error", "message": "SMTP not configured"}
+        
+        results = []
+        try:
+            # Connect to Gmail IMAP
+            imap = imaplib.IMAP4_SSL("imap.gmail.com", 993)
+            imap.login(SMTP_USER, SMTP_PASSWORD)
+            imap.select("INBOX")
+            
+            # Search for unread emails
+            status, messages = imap.search(None, "(UNSEEN)")
+            if status != "OK":
+                imap.logout()
+                return {"status": "error", "message": "IMAP search failed"}
+            
+            email_ids = messages[0].split()
+            new_replies = 0
+            auto_leads = 0
+            
+            for eid in email_ids[-20:]:  # Last 20 unread
+                _, msg_data = imap.fetch(eid, "(RFC822)")
+                raw = msg_data[0][1]
+                msg = email_lib.message_from_bytes(raw)
+                
+                sender = msg.get("From", "")
+                subject = msg.get("Subject", "")
+                date_str = msg.get("Date", "")
+                
+                # Extract body
+                body = ""
+                if msg.is_multipart():
+                    for part in msg.walk():
+                        ct = part.get_content_type()
+                        if ct == "text/plain":
+                            payload = part.get_payload(decode=True)
+                            if payload:
+                                body = payload.decode("utf-8", errors="replace")[:2000]
+                                break
+                else:
+                    payload = msg.get_payload(decode=True)
+                    if payload:
+                        body = payload.decode("utf-8", errors="replace")[:2000]
+                
+                # Check if this is a reply to our cold email
+                is_reply = any(keyword in subject.lower() for keyword in ["re:", "antwort", "aw:", "tr:"])
+                is_from_us = "revenue.agent.route" in sender.lower()
+                
+                if is_from_us:
+                    continue  # Skip our own emails
+                
+                # Route to appropriate bot
+                result = await cls.distribute_incoming(sender, subject, body)
+                
+                # If it's a reply to our cold email, create a high-priority task
+                if is_reply:
+                    new_replies += 1
+                    # Mark as hot lead
+                    email_record = {
+                        "id": f"reply_{eid.decode()}",
+                        "from": sender,
+                        "subject": subject,
+                        "body": body[:500],
+                        "assigned_bot": result.get("assigned_bot", "general_inquiry"),
+                        "priority": "high",
+                        "status": "hot_lead",
+                        "is_reply": True,
+                        "timestamp": datetime.now(timezone.utc).isoformat()
+                    }
+                    cls.inbox.append(email_record)
+                    results.append({"sender": sender, "subject": subject, "type": "reply", "priority": "high"})
+                else:
+                    auto_leads += 1
+                    results.append({"sender": sender, "subject": subject, "type": "new", "priority": "normal"})
+            
+            # Mark all as seen
+            for eid in email_ids:
+                imap.store(eid, "+FLAGS", "\Seen")
+            
+            imap.logout()
+            
+            summary = {
+                "status": "checked",
+                "new_emails": len(email_ids),
+                "replies_to_cold_emails": new_replies,
+                "new_inquiries": auto_leads,
+                "hot_leads": [r for r in results if r["priority"] == "high"],
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }
+            logger.info(f"IMAP check: {new_replies} replies, {auto_leads} new inquiries")
+            return summary
+            
+        except Exception as e:
+            logger.error(f"IMAP error: {e}")
+            return {"status": "error", "message": str(e)}
+    
     @classmethod
     def get_status(cls) -> Dict:
         return {
@@ -1840,7 +1953,8 @@ revenue.agent.route@gmail.com"""
             "inbox_count": len(cls.inbox),
             "sent_count": len(cls.sent),
             "smtp_host": SMTP_HOST,
-            "smtp_port": SMTP_PORT
+            "smtp_port": SMTP_PORT,
+            "has_imap": True
         }
 
 # ================================================================
