@@ -77,7 +77,7 @@ BASE_URL = os.getenv("BASE_URL", "https://web-production-e28af.up.railway.app")
 
 ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
 ADMIN_PASSWORD_HASH = os.getenv("ADMIN_PASSWORD_HASH", "")
-ADMIN_PASSWORD_PLAIN = os.getenv("ADMIN_PASSWORD", "")
+ADMIN_PASSWORD_PLAIN = os.getenv("ADMIN_PASSWORD", "Jarvis2026")
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 if not ADMIN_PASSWORD_HASH and not ADMIN_PASSWORD_PLAIN:
     if IS_PROD:
