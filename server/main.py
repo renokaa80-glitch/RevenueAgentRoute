@@ -77,10 +77,11 @@ BASE_URL = os.getenv("BASE_URL", "https://web-production-e28af.up.railway.app")
 
 ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
 ADMIN_PASSWORD_HASH = os.getenv("ADMIN_PASSWORD_HASH", "")
+ADMIN_PASSWORD_PLAIN = os.getenv("ADMIN_PASSWORD", "")
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-if not ADMIN_PASSWORD_HASH:
+if not ADMIN_PASSWORD_HASH and not ADMIN_PASSWORD_PLAIN:
     if IS_PROD:
-        raise RuntimeError("FATAL: ADMIN_PASSWORD_HASH environment variable is required in production!")
+        raise RuntimeError("FATAL: Set either ADMIN_PASSWORD or ADMIN_PASSWORD_HASH in Railway!")
     ADMIN_PASSWORD_HASH = pwd_context.hash("changeme")
 
 stripe.api_key = STRIPE_GEHEIMER_SCHLUESSEL
@@ -203,10 +204,14 @@ class KeepAliveSystem:
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/revenue/token")
 
 def verify_password(plain: str, hashed: str) -> bool:
-    try:
-        return pwd_context.verify(plain, hashed)
-    except Exception:
-        return False
+    if ADMIN_PASSWORD_PLAIN and plain == ADMIN_PASSWORD_PLAIN:
+        return True
+    if hashed:
+        try:
+            return pwd_context.verify(plain, hashed)
+        except Exception:
+            return False
+    return False
 
 def create_access_token(data: dict) -> str:
     to_encode = data.copy()
